@@ -1,0 +1,63 @@
+[tool.poetry]
+name = "dwh-oppfolging"
+version = "0.0.74"
+description = "Oppfolging python package for DWH ETL"
+authors = ["Team Oppfølging"]
+packages = [{include = "dwh_oppfolging"}]
+
+
+[tool.poetry.dependencies]
+python = "3.11.*"       # python 3.12 mangler distutils, som ødelegger installasjon av pendulum 2.1.2
+                        # derfor låser vi oss til python 3.11
+requests = "2.31.0"
+pendulum = "2.1.2"
+ijson = "3.2.3"
+oracledb = "1.4.2"      # versjonen her begrenses av dbt-oracle
+dbt-oracle = "1.6.2"    # denne krever cx_Oracle 8.3, som vi ikke klarer å bygge uten gcc
+                        # 3.11-slim har ikke gcc, men 3.11 har det, men den er +700 MB..
+google-cloud-secret-manager = "2.17.0"
+confluent-kafka = "2.3.0"
+fastavro = "1.9.1"
+
+[tool.poetry.group.dev.dependencies]
+black = "23.11.0"
+mypy = "1.7.1"
+pylint = "3.0.2"
+pytest = "7.4.3"
+apache-airflow = "2.7.3"
+dataverk-airflow = "1.2.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# [tool.sqlfluff.core]
+# dialect = "oracle"
+
+# [tool.sqlfluff.indentation]
+# indented_joins = "True"
+# indented_ctes = "True"
+
+# [tool.sqlfluff.rules]
+# comma_style = "leading"
+# tab_space_size = 4
+# capitalisation_policy = "lower"
+# operator_new_lines = "after"
+# aliasing = "explicit"
+
+[tool.pytest.ini_options]
+addopts = "--doctest-modules --ignore=examples"
+
+[tool.mypy]
+files = "dwh_oppfolging"
+
+[[tool.mypy.overrides]]
+module = "confluent_kafka.*"
+ignore_missing_imports = true
+
+[tool.pylint.messages_control]
+disable = [
+    "logging-fstring-interpolation",
+]
+max-line-length = 120
+
