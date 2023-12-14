@@ -4,6 +4,7 @@ version = "0.0.74"
 description = "Oppfolging python package for DWH ETL"
 authors = ["Team Oppfølging"]
 packages = [{include = "dwh_oppfolging"}]
+readme = "README.md"
 
 
 [tool.poetry.dependencies]
