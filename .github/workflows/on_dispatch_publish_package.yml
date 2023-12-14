@@ -1,4 +1,3 @@
-
 name: On dispatch, publish package to PyPi.
 
 on: workflow_dispatch
