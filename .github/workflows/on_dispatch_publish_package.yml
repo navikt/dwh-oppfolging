@@ -5,6 +5,7 @@ on: workflow_dispatch
 jobs:
   build-package:
     runs-on: ubuntu-latest
+    environment: build
     permissions:
       contents: read
     steps:
