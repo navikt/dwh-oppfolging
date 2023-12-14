@@ -10,7 +10,8 @@ on:
     branches:
       - main
     paths:
-      - dwh_oppfolging
+      - dwh_oppfolging/**
+      - pyproject.toml
 
 jobs:
   install_lint_and_test:
