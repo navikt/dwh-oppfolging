@@ -18,7 +18,7 @@ dbt-oracle = "1.7.0"    # denne krever cx_Oracle 8.3, som vi ikke klarer å bygg
                         # 3.11-slim har ikke gcc, men 3.11 har det, men den er +700 MB..
 google-cloud-secret-manager = "2.17.0"
 confluent-kafka = "2.3.0"
-fastavro = "1.9.1"
+fastavro = "1.9.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "23.12.0"
