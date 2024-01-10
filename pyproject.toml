@@ -22,7 +22,7 @@ fastavro = "1.9.2"
 
 [tool.poetry.group.dev.dependencies]
 black = "23.12.1"
-mypy = "1.7.1"
+mypy = "1.8.0"
 pylint = "3.0.3"
 pytest = "7.4.4"
 apache-airflow = "2.7.3"
