@@ -41,6 +41,26 @@ _CONFLUENT_SUBJECT_NOT_FOUND = 40401
 _CONFLUENT_VERSION_NOT_FOUND = 40402
 
 
+# wrap fastavro logical type readers so they return strings
+# to improve avro record compatibility with json
+from fastavro.logical_readers import LOGICAL_READERS
+def _datetime_logical_wrapper(f: Callable):
+    def wrapper(*args, **kwargs):
+        return f(*args, **kwargs).isoformat()
+    return wrapper
+for _logical_type in (
+    "long-timestamp-millis",
+    "long-local-timestamp-millis",
+    "long-timestamp-micros",
+    "long-local-timestamp-micros",
+    "int-date",
+    "int-time-millis",
+    "long-time-micros",
+):
+    LOGICAL_READERS[_logical_type] = _datetime_logical_wrapper(LOGICAL_READERS[_logical_type])
+del _logical_type
+
+
 class _DeserializationError(Exception):
     pass
 
