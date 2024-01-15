@@ -53,7 +53,6 @@ def string_to_naive_norwegian_datetime(
     """
     Parses string to pendulum datetime, then converts to Norwegian timezone
     (adjusting and adding utc offset, then appending tzinfo) and finally strips the timezone.
-    Note: There is an open issue in the pendulum library
 
     example: adjust from incoming timestamp assumed to be at 0 hours, +00:00 UTC
     >>> string_to_naive_norwegian_datetime("2022-05-05").isoformat()

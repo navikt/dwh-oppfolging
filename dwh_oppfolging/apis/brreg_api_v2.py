@@ -66,7 +66,15 @@ class BrregUnitAPI:
     def brreg_date_to_naive_norwegian_datetime(self, date: str | None):
         """
         Converts brreg date string to naive norwegian datetime.
-        
+        brreg date strings have format yyyy-mm-ddThh24:mi:ss.mmmZ (m: milli)
+
+        >>> api = BrregUnitAPI('Enhet', datetime.now())
+        >>> api.brreg_date_to_naive_norwegian_datetime('2022-05-05T05:05:05.123Z')
+        DateTime(2022, 5, 5, 7, 5, 5, 123000)
+
+        >>> api.brreg_date_to_naive_norwegian_datetime('1899-12-31T23:00:00.000Z')
+        DateTime(1900, 1, 1, 0, 0, 0)
+
         Params:
             - date: date string in brreg format
         
@@ -82,7 +90,11 @@ class BrregUnitAPI:
     def naive_utc0_datetime_to_brreg_date_str(self, date: datetime):
         """
         Converts naive utc0 datetime to brreg formatted date string.
-        
+
+        >>> api = BrregUnitAPI('Enhet', datetime.now())
+        >>> api.naive_utc0_datetime_to_brreg_date_str(datetime(2022, 5, 5, 5, 5, 5, 555 * 1000))
+        '2022-05-05T05:05:05.555Z'
+
         Params:
             - date: naive UTC0 datetime
         
@@ -96,6 +108,10 @@ class BrregUnitAPI:
     def make_fake_unit(self, orgnr: str):
         """
         Makes a fake unit json document
+        
+        >>> api = BrregUnitAPI('Enhet', datetime.now())
+        >>> api.make_fake_unit('123456789')
+        {'organisasjonsnummer': '123456789'}
 
         Params:
             - orgnr: 9-digit organization string
@@ -109,7 +125,6 @@ class BrregUnitAPI:
     def get_unit(self, orgnr: str, fake_if_not_found: bool = False):
         """
         Makes a get request to fetch the unit with given orgnr.
-
         If fake_if_not_found is True and the unit is not found,
         a faked unit document is returned.
 
@@ -149,6 +164,10 @@ class BrregUnitAPI:
         """
         Creates a fake unit update json document.
         Useful for units which have no update history.
+
+        >>> api = BrregUnitAPI('Enhet', datetime.now())
+        >>> api.make_fake_unit_update('123456789')
+        {'organisasjonsnummer': '123456789', 'endringstype': 'UKJENT', 'dato': '1899-12-31T23:00:00.000Z'}
 
         Params:
             - orgnr: 9-digit organization string
@@ -272,8 +291,13 @@ class BrregUnitAPI:
         Combines the update and fact json documents (dicts) returned for each orgnr
         from the get_unit_update_history/get_all_unit_updates_since and get_unit
         methods, respectively.
-
         NOTE: This method may remove keys in the input dicts.
+
+        >>> api = BrregUnitAPI('Enhet', datetime.now())
+        >>> org = '123456789'
+        >>> row = api.make_row(api.make_fake_unit_update(org), api.make_fake_unit(org))
+        >>> row["oppdatert_tid_kilde"]
+        DateTime(1900, 1, 1, 0, 0, 0)
 
         Params:
             - update: dict
@@ -385,7 +409,7 @@ class BrregUnitAPI:
                 for record in ijson.items(file, "item"):  # type: ignore
                     records.append(
                         self.make_row(
-                            self.make_fake_unit_update(record["organisasjonsnummer"],"FLATFIL"),
+                            self.make_fake_unit_update(record["organisasjonsnummer"], "FLATFIL"),
                             record,
                         )
                     )
