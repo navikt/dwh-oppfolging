@@ -53,10 +53,28 @@ def string_to_naive_norwegian_datetime(
     """
     Parses string to pendulum datetime, then converts to Norwegian timezone
     (adjusting and adding utc offset, then appending tzinfo) and finally strips the timezone.
-    >>> string_to_naive_norwegian_datetime("2022-05-05T05:05:05+01:00").isoformat()
-    '2022-05-05T06:05:05'
+    Note: There is an open issue in the pendulum library
+
+    example: adjust from incoming timestamp assumed to be at 0 hours, +00:00 UTC
     >>> string_to_naive_norwegian_datetime("2022-05-05").isoformat()
     '2022-05-05T02:00:00'
+
+    example: adjust from incoming timestamp at +00:00 UTC
+    >>> string_to_naive_norwegian_datetime("1900-01-01T00:00:00+00:00").isoformat()
+    '1900-01-01T01:00:00'
+
+    example: adjust from incoming timezone where day changes, +00:00 UTC
+    >>> string_to_naive_norwegian_datetime("1900-01-01T23:00:00+00:00").isoformat()
+    '1900-01-02T00:00:00'
+
+    example: adjust from incoming timezone where year changes, +00:00 UTC
+    >>> string_to_naive_norwegian_datetime("1900-12-31T23:00:00+00:00").isoformat()
+    '1901-01-01T00:00:00'
+
+    example: adjust from incoming timezone where year changes, +00:00 UTC
+    (this breaks with pendulum < 3.0.0)
+    >>> string_to_naive_norwegian_datetime("1899-12-31T23:00:00+00:00").isoformat()
+    '1900-01-01T00:00:00'
     """
     pdl_dt = pendulum.parser.parse(string)
     assert isinstance(pdl_dt, PendulumDateTime)
@@ -76,6 +94,8 @@ def string_to_naive_utc0_datetime(
     '2022-05-05T04:05:05'
     >>> string_to_naive_utc0_datetime("2022-05-05").isoformat()
     '2022-05-05T00:00:00'
+    >>> string_to_naive_utc0_datetime("1900-01-01").isoformat()
+    '1900-01-01T00:00:00'
     """
     pdl_dt = pendulum.parser.parse(string)
     assert isinstance(pdl_dt, PendulumDateTime)
