@@ -5,7 +5,7 @@ from datetime import datetime
 import hashlib
 import json
 import re
-import pendulum
+import pendulum.parser
 from pendulum.datetime import DateTime as PendulumDateTime
 
 
