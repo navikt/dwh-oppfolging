@@ -1,6 +1,6 @@
 "datatypes used by kafka api"
 
-from typing_extensions import Any, Literal
+from typing_extensions import Any, Literal, get_args
 from typing import Final, Callable, Generator
 import logging
 import struct
@@ -31,6 +31,7 @@ _LogicalOffset = Literal[OFFSET_BEGINNING, OFFSET_END, OFFSET_STORED, OFFSET_INV
 KafkaRecord = dict[str, str | int | None]
 SerializationType = Literal["confluent-json", "confluent-avro", "json", "str"]
 _Deserializer = Callable[[bytes], tuple[str, int] | tuple[str, None]]
+_BytesHasher = Callable[[bytes], str]
 _TIMESTAMP_DESCRIPTORS_LKP: Final[dict[int, str]] = {
     TIMESTAMP_CREATE_TIME: "SOURCE",
     TIMESTAMP_LOG_APPEND_TIME: "BROKER"
@@ -58,7 +59,7 @@ for _logical_type in (
     "long-time-micros",
 ):
     LOGICAL_READERS[_logical_type] = _datetime_logical_wrapper(LOGICAL_READERS[_logical_type])
-del _logical_type
+del _logical_type # type: ignore
 
 
 class _DeserializationError(Exception):
@@ -98,11 +99,17 @@ class KafkaConnection:
         self._schema_registry_client = SchemaRegistryClient(self._schema_registry_config)
 
         self._cached_confluent_schemas: dict[int, Schema] = {}
-        self._deserializer_map: dict[SerializationType, _Deserializer] = {
+        self._deserializer_map: dict[SerializationType | None, _Deserializer] = {
             "str": self._str_deserializer,
             "json": self._json_deserializer,
             "confluent-json": self._confluent_json_deserializer,
             "confluent-avro": self._confluent_avro_deserializer
+        }
+        self._byteshasher_map: dict[SerializationType | None, _BytesHasher] = {
+            "str": bytes_to_sha256_hash,
+            "json": bytes_to_sha256_hash,
+            "confluent-json": lambda x: bytes_to_sha256_hash(x[_CONFLUENT_HEADER_SIZE:]),
+            "confluent-avro": lambda x: bytes_to_sha256_hash(x[_CONFLUENT_HEADER_SIZE:]),
         }
 
     def _str_deserializer(self, value: bytes) -> tuple[str, None]:
@@ -126,9 +133,8 @@ class KafkaConnection:
 
     def _confluent_json_deserializer(self, value: bytes) -> tuple[str, int]:
         try:
-            # JSON documents describe their own schema
             schema_id = self._extract_confluent_schema_id(value)
-            deserialized_value = json_bytes_to_string(value[_CONFLUENT_HEADER_SIZE:])
+            deserialized_value = json_bytes_to_string(value[_CONFLUENT_HEADER_SIZE:]) # JSON objects describe their own schema
             return deserialized_value, schema_id
         except Exception as exc:
             raise _DeserializationError(*exc.args) from None
@@ -184,6 +190,8 @@ class KafkaConnection:
         message: Message,
         key_deserializer: _Deserializer | None,
         value_deserializer: _Deserializer | None,
+        key_bytes_hasher: _BytesHasher,
+        value_bytes_hasher: _BytesHasher,
     ) -> KafkaRecord:
 
         topic: str | None = message.topic()
@@ -205,7 +213,7 @@ class KafkaConnection:
         key_schema_id: int | None = None
         deserialized_key: str | None = None
         if type(key) is bytes:
-            key_hash = bytes_to_sha256_hash(key)
+            key_hash = key_bytes_hasher(key)
             if key_deserializer is not None:
                 deserialized_key, key_schema_id = key_deserializer(key)
             else:
@@ -219,7 +227,7 @@ class KafkaConnection:
         value_schema_id: int | None = None
         deserialized_value: str | None = None
         if type(value) is bytes:
-            value_hash = bytes_to_sha256_hash(value)
+            value_hash = value_bytes_hasher(value)
             if value_deserializer is not None:
                 deserialized_value, value_schema_id = value_deserializer(value)
             else:
@@ -302,16 +310,59 @@ class KafkaConnection:
         record_callback: Callable[[KafkaRecord], Any] | None = None
     ) -> Generator[list[KafkaRecord], None, None]:
         """
-        reads messages from topic beginning (or end)
-        or from custom offsets (silently ignored for non-existing partitions)
+        Reads kafka messages from a kafka topic using the assign-poll method,
+        yielding proper messages in batches as processed records,
+        until the end of all the topic's partitions have been reached.
+        Error- and event type messages are merely logged, except for _PARTITION_EOF, which is treated separately for unassigning.
+        The number of completely empty messages are also logged (undocumented library case, not the same as tombstones).
+
+        The records are dicts with the following keys:
+            - KAFKA_KEY, KAFKA_KEY_HASH, KAFKA_KEY_SCHEMA
+            - KAFKA_VALUE, KAFKA_VALUE_HASH, KAFKA_VALUE_SCHEMA
+            - KAFKA_TIMESTAMP, KAFKA_TIMESTAMP_TYPE
+            - KAFKA_TOPIC, KAFKA_PARTITION, KAFKA_OFFSET
+            - KAFKA_HEADERS
+
+        params:
+            - topic:
+                The full name of the topic.
+            - read_from_end_instead_of_beginning: bool (default: False)
+                If set, partitions without a given starting offset are read from the end, instead of the beginning.
+            - expected_key_type: str | None (default: None)
+                Specifies how the key data is deserialized and how its sha256 hash is calculated.
+                If left unspecified, data deserialization is not performed, but a string is emitted instead:
+                    either a hex-representation of the data bytes
+                    or possibly the serialized data itself if it was a string (undocumented library case).
+                Hashing is performed on the serialized data, except in the odd string case.
+                For confluent-avro and confluent-json, the first 5 data bytes are skipped in hash calculation,
+                since these contain metadata regarding the confluent schema separate from the serialized data.
+            - expected_value_type: str | None (default: None)
+                Same as for the key, but applied to the value data.
+            - custom_start_partition_offsets: [(partition int, offset int)] | None (default: None)
+                Specifies starting offsets for partitions. Partitions which are not found and therefore
+                not assignable are silently ignored. Partitions which exist but are not mentioned here
+                are either read from the beginning or the end.
+            - batch_size: int (default: 1000)
+                The maximum number of messages to consume before yielding a batch
+            - record_callback: (dict -> any) | None (default: None)
+                Specifices a function to be called on each consumed and processed kafka message (record)
+                before batch collection.
+
+        yields:
+            - list of records (dicts)
         """
+        
+        assert expected_key_type is None or expected_key_type in get_args(SerializationType)
+        assert expected_value_type is None or expected_value_type in get_args(SerializationType)
         
         # try to cache all before message loop
         if "confluent-avro" in (expected_key_type, expected_value_type):
             self._cached_confluent_schemas = self.find_all_confluent_registry_schemas_for_topic(topic)
-
-        key_deserializer = self._deserializer_map.get(expected_key_type) # type: ignore
-        value_deserializer = self._deserializer_map.get(expected_value_type) # type: ignore
+        
+        key_deserializer = self._deserializer_map.get(expected_key_type)
+        value_deserializer = self._deserializer_map.get(expected_value_type)
+        key_bytes_hasher = self._byteshasher_map.get(expected_key_type, bytes_to_sha256_hash)
+        value_bytes_hasher = self._byteshasher_map.get(expected_value_type, bytes_to_sha256_hash)
 
         default_offset = OFFSET_END if read_from_end_instead_of_beginning else OFFSET_BEGINNING
         partition_lkp = self._get_partition_lkp(topic)
@@ -337,7 +388,7 @@ class KafkaConnection:
             non_empty_counter += 1
 
             try:
-                err: KafkaError | None = message.error()
+                err: KafkaError | None = message.error() #  returns None if event or error
 
                 # case: event, error
                 if err is not None:
@@ -358,7 +409,9 @@ class KafkaConnection:
 
                 # case: proper message
                 else:
-                    record = self._unpack_message_into_kafka_record(message, key_deserializer, value_deserializer)
+                    record = self._unpack_message_into_kafka_record(
+                        message, key_deserializer, value_deserializer, key_bytes_hasher, value_bytes_hasher
+                    )
                     if record_callback is not None:
                         record = record_callback(record)
                     batch.append(record)
@@ -375,6 +428,7 @@ class KafkaConnection:
                 yield batch
                 batch = []
                 raise exc
+
         logging.info(f"Completed with {non_empty_counter} events consumed")
         if empty_counter > 0:
             logging.warning(f"found {empty_counter} empty messages")
