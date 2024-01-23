@@ -1,7 +1,7 @@
 "brreg api"
 # pylint: disable=line-too-long
 import logging
-from typing import Generator, Literal
+from typing import Literal, Callable, Any, Iterator, Generator
 from datetime import datetime
 import gzip
 import requests # type: ignore
@@ -322,6 +322,7 @@ class BrregUnitAPI:
         record["kildesystem"] = API_NAME
         return record
 
+
     def get_unit_as_row(
         self,
         orgnr: str,
@@ -379,14 +380,78 @@ class BrregUnitAPI:
         return rows
 
 
+    def get_file_last_modified(self):
+        """
+        returns when the inventory file of all the units was last modified
+
+        returns:
+            - naive norwegian datetime
+        raises:
+            - HTTPError
+        """
+        url = self._unit_file_url
+        headers = self._unit_file_headers
+        response = requests.head(url, headers=headers)
+        response.raise_for_status()
+        string = response.headers["last-modified"]
+        fmt = "ddd MMM DD HH:mm:ss z YYYY"
+        return string_to_naive_norwegian_datetime(string, fmt)
+
+
+    def stream_all_units_from_file(
+        self,
+        batch_size: int = 1000,
+        callback: Callable[[dict], Any] | None = None
+    ) -> Generator[list, None, None]:
+        """
+        Yields lists of units from a large compressed file available in the BRREG API.
+        The file is produced around 05:00 brreg local time each day.
+
+        NOTE: The file API does not give any information about types of- and dates for updates
+            Only- and all of the active units (presumably not having endringstype 'Sletting', or 'Fjernet')
+            are in the file.
+
+        params:
+            - batch_size: the maximum number of units to decompress before yielding (default 1000)
+            - callback: dict -> Any (optional, default: None)
+                optional callable that is run on each decompressed unit before it is batched
+                NOTE: if the callback function returns falsy for a unit, then the return is not batched.
+                so the callback acts both as transform and filter.
+                if the callback is not specified, falsy units are still not batched
+                (which may happen if the file contains empty unit entries).
+
+        yields:
+            - list of dicts (or whatever callback returns)
+
+        raises:
+            - HTTPError
+        """
+        callback = callback or (lambda x: x) # optimize away the if
+        logging.info("requesting filestream from api")
+        url = self._unit_file_url
+        headers = self._unit_file_headers
+        with requests.get(url, headers=headers, stream=True, timeout=100) as response:
+            response.raise_for_status()
+            logging.info("decompressing filestream")
+            with gzip.open(response.raw, "rb") as file:
+                batch = []
+                logging.info("iterating over json objects")
+                for record in filter(None, map(callback, ijson.items(file, "item"))):  # type: ignore
+                    batch.append(record)
+                    if len(batch) >= batch_size:
+                        yield batch
+                        batch = []
+                if len(batch) > 0:
+                    yield batch
+
+
     def stream_all_units_as_rows_from_file(
             self,
             batch_size: int = 1000,
         ) -> Generator[list, None, None]:
         """
-        Yields lists of rows from a large file available in the BRREG API.
-        Must be run some time after 5 brreg local time on a given day.
-        Useful for init loading table.
+        Same as stream_all_units_from_file but with the callback
+        set as the row maker
 
         NOTE: The file API does not give any information about updates,
         so all updates are faked in making rows.
@@ -397,24 +462,9 @@ class BrregUnitAPI:
         Yields:
             - list of dicts
         """
-        logging.info("requesting filestream from api")
-        url = self._unit_file_url
-        headers = self._unit_file_headers
-        with requests.get(url, headers=headers, stream=True, timeout=100) as response:
-            response.raise_for_status()
-            logging.info("decompressing filestream")
-            with gzip.open(response.raw, "rb") as file:
-                records = []
-                logging.info("iterating over json objects")
-                for record in ijson.items(file, "item"):  # type: ignore
-                    records.append(
-                        self.make_row(
-                            self.make_fake_unit_update(record["organisasjonsnummer"], "FLATFIL"),
-                            record,
-                        )
-                    )
-                    if len(records) >= batch_size:
-                        yield records
-                        records = []
-                if len(records) > 0:
-                    yield records
+        def callback(record: dict):
+            return self.make_row(
+                self.make_fake_unit_update(record["organisasjonsnummer"], "FLATFIL"),
+                record,
+            )
+        return self.stream_all_units_from_file(batch_size, callback)
