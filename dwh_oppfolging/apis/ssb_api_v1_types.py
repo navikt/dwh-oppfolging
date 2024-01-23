@@ -2,7 +2,7 @@
 
 from typing import NamedTuple, TypedDict
 from datetime import datetime
-from typing_extensions import Self
+from typing import Self
 from dwh_oppfolging.transforms.functions import string_to_naive_norwegian_datetime, json_to_string, string_to_sha256_hash
 
 

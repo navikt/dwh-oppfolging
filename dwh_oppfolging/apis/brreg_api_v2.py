@@ -1,7 +1,7 @@
 "brreg api"
 # pylint: disable=line-too-long
 import logging
-from typing import Literal, Callable, Any, Iterator, Generator
+from typing import Literal, Callable, Iterator
 from datetime import datetime
 import gzip
 import requests # type: ignore
@@ -398,11 +398,12 @@ class BrregUnitAPI:
         return string_to_naive_norwegian_datetime(string, fmt)
 
 
-    def stream_all_units_from_file(
+    def stream_all_units_from_file[T](
         self,
         batch_size: int = 1000,
-        callback: Callable[[dict], Any] | None = None
-    ) -> Generator[list, None, None]:
+        unit_callback: Callable[[dict], T] | None = None,
+        unit_filter: Callable[[dict | T], bool] | None = None,
+    ) -> Iterator[list[dict | T]]:
         """
         Yields lists of units from a large compressed file available in the BRREG API.
         The file is produced around 05:00 brreg local time each day.
@@ -413,12 +414,14 @@ class BrregUnitAPI:
 
         params:
             - batch_size: the maximum number of units to decompress before yielding (default 1000)
-            - callback: dict -> Any (optional, default: None)
-                optional callable that is run on each decompressed unit before it is batched
-                NOTE: if the callback function returns falsy for a unit, then the return is not batched.
-                so the callback acts both as transform and filter.
-                if the callback is not specified, falsy units are still not batched
-                (which may happen if the file contains empty unit entries).
+            - unit_callback: dict -> Any (optional)
+                optional callable that can run on each decompressed unit before it is filtered and batched
+                if not specified, the identity function is used
+            - unit_filter: dict|any -> bool (optional)
+                optional filter that can run on each decompressed and callbacked unit,
+                if the filter returns true, the callbacked unit is batched, otherwise, it is not batched
+                if not specified, only units which are true are batched
+                (i.e. if bool(unit) is false it is skipped)
 
         yields:
             - list of dicts (or whatever callback returns)
@@ -426,7 +429,7 @@ class BrregUnitAPI:
         raises:
             - HTTPError
         """
-        callback = callback or (lambda x: x) # optimize away the if
+        callback = unit_callback or (lambda x: x)
         logging.info("requesting filestream from api")
         url = self._unit_file_url
         headers = self._unit_file_headers
@@ -434,9 +437,9 @@ class BrregUnitAPI:
             response.raise_for_status()
             logging.info("decompressing filestream")
             with gzip.open(response.raw, "rb") as file:
-                batch = []
+                batch: list[dict | T] = []
                 logging.info("iterating over json objects")
-                for record in filter(None, map(callback, ijson.items(file, "item"))):  # type: ignore
+                for record in filter(unit_filter, map(callback, ijson.items(file, "item"))):  # type: ignore
                     batch.append(record)
                     if len(batch) >= batch_size:
                         yield batch
@@ -445,10 +448,7 @@ class BrregUnitAPI:
                     yield batch
 
 
-    def stream_all_units_as_rows_from_file(
-            self,
-            batch_size: int = 1000,
-        ) -> Generator[list, None, None]:
+    def stream_all_units_as_rows_from_file(self, batch_size: int = 1000):
         """
         Same as stream_all_units_from_file but with the callback
         set as the row maker
