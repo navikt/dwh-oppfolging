@@ -48,11 +48,19 @@ def flatten_dict(mapping: dict, sep: str = "_", flatten_lists: bool = False) -> 
 
 
 def string_to_naive_norwegian_datetime(
-    string: str
+    string: str,
+    fmt: str | None = None
 ) -> datetime:
     """
     Parses string to pendulum datetime, then converts to Norwegian timezone
     (adjusting and adding utc offset, then appending tzinfo) and finally strips the timezone.
+
+    params:
+        - string: the string representing some date and time
+        - (optional) fmt: an explicit date and time formatting string using pendulumn tokens to parse with
+            note: some timezones and tokens may fail, this is an open issue in pendulum.
+    returns:
+        - pendulum datetime
 
     example: adjust from incoming timestamp assumed to be at 0 hours, +00:00 UTC
     >>> string_to_naive_norwegian_datetime("2022-05-05").isoformat()
@@ -74,8 +82,12 @@ def string_to_naive_norwegian_datetime(
     (this breaks with pendulum < 3.0.0)
     >>> string_to_naive_norwegian_datetime("1899-12-31T23:00:00+00:00").isoformat()
     '1900-01-01T00:00:00'
+
+    example: specifying the optional format
+    >>> string_to_naive_norwegian_datetime("Mon Jan 22 04:21:09 CET 2024", "ddd MMM DD HH:mm:ss z YYYY").isoformat()
+    '2024-01-22T04:21:09'
     """
-    pdl_dt = pendulum.parser.parse(string)
+    pdl_dt = pendulum.parser.parse(string) if not fmt else pendulum.from_format(string, fmt)
     assert isinstance(pdl_dt, PendulumDateTime)
     pdl_dt = pdl_dt.in_timezone("Europe/Oslo")
     pdl_dt = pdl_dt.naive()
