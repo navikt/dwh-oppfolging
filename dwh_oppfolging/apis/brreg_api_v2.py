@@ -1,7 +1,7 @@
 "brreg api"
 # pylint: disable=line-too-long
 import logging
-from typing import Literal, Callable, Iterator
+from typing import Literal, Callable, Iterator, Any
 from datetime import datetime
 import gzip
 import requests # type: ignore
@@ -258,7 +258,7 @@ class BrregUnitAPI:
         Returns:
             - a dict of {orgnr: [update]}
         """
-        orgnr_update_map = {}
+        orgnr_update_map: dict[str, list[dict]] = {}
         params = {"dato": self.naive_utc0_datetime_to_brreg_date_str(last_modified_date), "oppdateringsid": 1}
         while True:
             response = requests.get(self._unit_update_url, headers=self._unit_update_headers, params=params, timeout=100)
@@ -398,12 +398,12 @@ class BrregUnitAPI:
         return string_to_naive_norwegian_datetime(string, fmt)
 
 
-    def stream_all_units_from_file[T](
+    def stream_all_units_from_file(
         self,
         batch_size: int = 1000,
-        unit_callback: Callable[[dict], T] | None = None,
-        unit_filter: Callable[[dict | T], bool] | None = None,
-    ) -> Iterator[list[dict | T]]:
+        unit_callback: Callable[[dict], Any] | None = None,
+        unit_filter: Callable[[dict | Any], bool] | None = None,
+    ) -> Iterator[list[dict | Any]]:
         """
         Yields lists of units from a large compressed file available in the BRREG API.
         The file is produced around 05:00 brreg local time each day.
@@ -437,7 +437,7 @@ class BrregUnitAPI:
             response.raise_for_status()
             logging.info("decompressing filestream")
             with gzip.open(response.raw, "rb") as file:
-                batch: list[dict | T] = []
+                batch: list[dict | Any] = []
                 logging.info("iterating over json objects")
                 for record in filter(unit_filter, map(callback, ijson.items(file, "item"))):  # type: ignore
                     batch.append(record)

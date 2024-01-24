@@ -299,15 +299,15 @@ class KafkaConnection:
         consumer_client.close()
         return [(tp.partition, tp.offset if tp.offset > 0 else OFFSET_END) for tp in topic_partitions]
 
-    def read_batched_messages_from_topic[T](
+    def read_batched_messages_from_topic(
         self, topic: Topic,
         read_from_end_instead_of_beginning: bool = False,
         expected_key_type: SerializationType | None = None,
         expected_value_type: SerializationType | None = None,
         custom_start_partition_offsets: list[tuple[Partition, Offset]] | None = None,
         batch_size: int = 1000,
-        record_callback: Callable[[KafkaRecord], T] | None = None
-    ) -> Iterator[list[KafkaRecord | T]]:
+        record_callback: Callable[[KafkaRecord], Any] | None = None
+    ) -> Iterator[list[KafkaRecord | Any]]:
         """
         Reads kafka messages from a kafka topic using the assign-poll method,
         yielding proper messages in batches as processed records,
@@ -374,7 +374,7 @@ class KafkaConnection:
         logging.info(f"Assigned to {consumer_client.assignment()}.")
         
         # main loop
-        batch: list[KafkaRecord | T] = []
+        batch: list[KafkaRecord | Any] = []
         empty_counter = 0
         non_empty_counter = 0
         assignment_count = len(consumer_client.assignment())
