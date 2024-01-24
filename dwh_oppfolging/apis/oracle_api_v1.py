@@ -1,7 +1,7 @@
 "oracle api"
 
 import logging
-from typing import Generator, Any
+from typing import Iterator
 from datetime import datetime, timedelta
 
 from oracledb.connection import Connection # pylint: disable=no-name-in-module
@@ -14,7 +14,7 @@ from dwh_oppfolging.apis.secrets_api_v1 import get_oracle_secrets_for
 from dwh_oppfolging.apis.oracle_api_v1_types import Row
 
 
-def _fix_timestamp_inputtypehandler(cur: Cursor, val: Any, arrsize: int) -> Var | None:
+def _fix_timestamp_inputtypehandler(cur: Cursor, val, arrsize: int) -> Var | None:
     if isinstance(val, datetime) and val.microsecond > 0:
         return cur.var(TIMESTAMP, arraysize=arrsize) # pylint: disable=no-member
     # No return value implies default type handling
@@ -26,7 +26,7 @@ def create_oracle_connection(username: str) -> Connection:
     returns oracle connection with db access
     you have to call .commit() yourself
     """
-    con = connect(**get_oracle_secrets_for(username))
+    con = connect(**get_oracle_secrets_for(username)) # type: ignore
     con.inputtypehandler = _fix_timestamp_inputtypehandler
     return con
 
@@ -220,7 +220,7 @@ def _insert_to_table_gen(
     cur: Cursor,
     schema: str,
     table: str,
-    data: Generator[list[Row] | Row, None, None] | list[Row] | Row,
+    data: Iterator[list[Row] | Row] | list[Row] | Row,
     unique_columns: list[str] | None = None,
     additional_where_clauses: list[str] | None = None,
     enable_etl_logging: bool = False,
@@ -253,7 +253,7 @@ def insert_to_table(
     cur: Cursor,
     schema: str,
     table: str,
-    data: Generator[list[Row] | Row, None, None] | list[Row] | Row,
+    data: Iterator[list[Row] | Row] | list[Row] | Row,
     unique_columns: list[str] | None = None,
     additional_where_clauses: list[str] | None = None,
     enable_etl_logging: bool = True,
@@ -286,7 +286,7 @@ def create_table_insert_generator(
     cur: Cursor,
     schema: str,
     table: str,
-    data: Generator[list[Row] | Row, None, None] | list[Row] | Row,
+    data: Iterator[list[Row] | Row] | list[Row] | Row,
     unique_columns: list[str] | None = None,
     additional_where_clauses: list[str] | None = None,
     enable_etl_logging: bool = True,

@@ -51,7 +51,6 @@ addopts = "--doctest-modules --ignore=examples"
 files = "dwh_oppfolging"
 
 [[tool.mypy.overrides]]
-module = "confluent_kafka.*"
 ignore_missing_imports = true
 
 [tool.pylint.messages_control]

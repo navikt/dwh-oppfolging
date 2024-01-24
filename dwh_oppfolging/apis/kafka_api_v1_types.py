@@ -1,7 +1,6 @@
 "datatypes used by kafka api"
 
-from typing_extensions import Any, Literal, get_args
-from typing import Final, Callable, Generator
+from typing import Final, Callable, Iterator, Any, Literal, get_args
 import logging
 import struct
 from io import BytesIO
@@ -308,7 +307,7 @@ class KafkaConnection:
         custom_start_partition_offsets: list[tuple[Partition, Offset]] | None = None,
         batch_size: int = 1000,
         record_callback: Callable[[KafkaRecord], Any] | None = None
-    ) -> Generator[list[KafkaRecord], None, None]:
+    ) -> Iterator[list[KafkaRecord | Any]]:
         """
         Reads kafka messages from a kafka topic using the assign-poll method,
         yielding proper messages in batches as processed records,
@@ -375,7 +374,7 @@ class KafkaConnection:
         logging.info(f"Assigned to {consumer_client.assignment()}.")
         
         # main loop
-        batch: list[KafkaRecord] = []
+        batch: list[KafkaRecord | Any] = []
         empty_counter = 0
         non_empty_counter = 0
         assignment_count = len(consumer_client.assignment())
