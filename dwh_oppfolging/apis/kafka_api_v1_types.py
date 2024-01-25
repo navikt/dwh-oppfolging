@@ -200,6 +200,7 @@ class KafkaConnection:
         timestamp_data: tuple[int, int] = message.timestamp()
         timestamp_type = timestamp_data[0]
         # The returned timestamp should be ignored if the timestamp type is TIMESTAMP_NOT_AVAILABLE.
+        # confluent-kafka: The timestamp is the number of milliseconds since the epoch (UTC).
         timestamp_value = timestamp_data[1] if timestamp_type != TIMESTAMP_NOT_AVAILABLE else None
         timestamp_desc = _TIMESTAMP_DESCRIPTORS_LKP.get(timestamp_type)
 

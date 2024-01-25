@@ -119,7 +119,17 @@ def epoch_to_naive_utc0_datetime(
     epoch: int | float
 ) -> datetime:
     """
-    Parses integer/float to pendulum datetime, and strips the default UTC timezone.
+    Parses integer/float to pendulum datetime, representing seconds since unix epoch, and strips the default UTC timezone.
+    When converting from milliseconds, divide by 1000 first.
+
+    example: forgetting to divide by 1000
+    >>> try: epoch_to_naive_utc0_datetime(1706000773111)
+    ... except ValueError as exc: exc.args[0]
+    'year 56031 is out of range'
+
+    example: remembering to do it
+    >>> epoch_to_naive_utc0_datetime(1706000773111 / 1000).isoformat()
+    '2024-01-23T09:06:13.111000'
     """
     pdl_dt = pendulum.from_timestamp(epoch) # default timezone UTC
     assert isinstance(pdl_dt, PendulumDateTime)
