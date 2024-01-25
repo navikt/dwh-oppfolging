@@ -358,8 +358,9 @@ class KafkaConnection:
                 result = self.get_start_and_end_offsets(topic, partition)
                 if result is not None:
                     offset_lo, offset_hi = result
-                    assert offset >= offset_lo and offset <= offset_hi, f"offset {offset} on partition {partition} is out of bounds"
-        
+                    assert offset >= offset_lo, f"offset {offset} on partition {partition} is lower than watermark range"
+                    assert offset <= offset_hi, f"offset {offset} on partition {partition} is higher than watermark range"
+
         # try to cache all avro schemas before message loop
         if "confluent-avro" in (expected_key_type, expected_value_type):
             self._cached_confluent_schemas = self.find_all_confluent_registry_schemas_for_topic(topic)
