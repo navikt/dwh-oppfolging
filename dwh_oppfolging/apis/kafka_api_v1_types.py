@@ -307,6 +307,7 @@ class KafkaConnection:
         expected_value_type: SerializationType | None = None,
         custom_start_partition_offsets: list[tuple[Partition, Offset]] | None = None,
         record_callback: Callable[[KafkaRecord], Any] | None = None,
+        clip_custom_start_offsets: bool = True,
     ) -> Iterator[list[KafkaRecord | Any]]:
         """
         Reads kafka messages from a kafka topic using the assign-poll method,
@@ -346,6 +347,18 @@ class KafkaConnection:
             - record_callback: (dict -> any) | None (default: None)
                 Specifices a function to be called on each consumed and processed kafka message (record)
                 before batch collection.
+            - clip_custom_start_offsets: bool (default: True)
+                if set, custom start offsets less than the low watermark offset is set to OFFSET_BEGINNING,
+                and custom start offsets greater than the high watermark offset is set to OFFSET_END.
+                Otherwise, if not set, an out-of-bounds error may occur if it is not in the watermark range.
+
+                Clipping is enabled by default so that one can request to start reading from say last-commited-offset+1,
+                with the intention of continuing to read from where one last stopped, without reading the same
+                message over again, and in case there is nothing new, simply ceasing to read.
+                Similarly, one may pass an older offset with the intent of re-reading messages, even though
+                it may be missing due to log truncation.
+                NOTE: In the case that last-commited-offset+1 does not exist because it has been deleted from the partition,
+                but is also greater than the high watermark offset, then it follows there is nothing new to read.
 
         yields:
             - list of records (dicts)
@@ -355,16 +368,19 @@ class KafkaConnection:
         assert expected_key_type is None or expected_key_type in get_args(SerializationType)
         assert expected_value_type is None or expected_value_type in get_args(SerializationType)
         if custom_start_partition_offsets is not None:
-            for partition, offset in custom_start_partition_offsets:
+            for idx, (partition, offset) in enumerate(custom_start_partition_offsets):
                 result = self.get_start_and_end_offsets(topic, partition)
-                if result is not None:
+                if result is None: # timeout, skip validation, will be caught as error in the msg loop anyway
+                    logging.warning(f"custom start offset validation for partition {partition} failed due to timeout")
+                else:
                     offset_lo, offset_hi = result
-                    try:
-                        assert offset_lo <= offset and offset <= offset_hi
-                    except AssertionError as exc:
-                        logging.error(f"start offset {offset} on partition {partition} out of bounds")
-                        logging.error("consider using the closest one (in time) from `get_closest_offsets` instead")
-                        raise exc
+                    if offset < offset_lo or offset > offset_hi:
+                        if clip_custom_start_offsets:
+                            offset = OFFSET_END if offset > offset_hi else OFFSET_BEGINNING
+                            custom_start_partition_offsets[idx] = (partition, offset)
+                            logging.info(f"clipped custom start offset for partition {partition}")
+                        else:
+                            raise Exception(f"custom start offset {offset} on partition {partition} out-of-bounds")
 
         # try to cache all avro schemas before message loop
         if "confluent-avro" in (expected_key_type, expected_value_type):
