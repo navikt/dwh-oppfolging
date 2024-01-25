@@ -358,8 +358,12 @@ class KafkaConnection:
                 result = self.get_start_and_end_offsets(topic, partition)
                 if result is not None:
                     offset_lo, offset_hi = result
-                    assert offset >= offset_lo, f"offset {offset} on partition {partition} is lower than watermark range"
-                    assert offset <= offset_hi, f"offset {offset} on partition {partition} is higher than watermark range"
+                    try:
+                        assert offset_lo <= offset and offset <= offset_hi
+                    except AssertionError as exc:
+                        logging.error(f"start offset {offset} on partition {partition} out of bounds")
+                        logging.error("consider using the closest one (in time) from `get_closest_offsets` instead")
+                        raise exc
 
         # try to cache all avro schemas before message loop
         if "confluent-avro" in (expected_key_type, expected_value_type):
@@ -436,8 +440,7 @@ class KafkaConnection:
                             err_topic, err_partition, err_offset = message.topic(), message.partition(), message.offset()
                             assert err_topic is not None and err_partition is not None and err_offset is not None
                             logging.error(f"start offset {err_offset} on partition {err_partition} can not be fetched")
-                            logging.error("if the offset was within the watermark range...")
-                            logging.error("...consider using the closest one (in time) from `get_closest_offsets` instead")
+                            logging.error("consider using the closest one (in time) from `get_closest_offsets` instead")
                             raise err
 
                         # unhandled errors
