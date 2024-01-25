@@ -87,8 +87,8 @@ class KafkaConnection:
 
         self._consumer_config = self._admin_config | {
             "group.id": "NOT_USED",
-            "auto.offset.reset": "beginning",
-            "enable.auto.commit": False,
+            "auto.offset.reset": "error", # <- Action to take when there is no initial offset in offset store 
+            "enable.auto.commit": False,  # ^ or the desired offset is out of range: beginning or end or error
             "enable.auto.offset.store": False,
             "api.version.request": True,
             'enable.partition.eof': True
@@ -174,11 +174,11 @@ class KafkaConnection:
         custom_partition_offsets: list[tuple[Partition, Offset]] | None = None,
     ) -> list[TopicPartition]:
         topic_partitions: list[TopicPartition] = []
-        custom_lkp: dict[Offset, Partition] = {}
+        custom_lkp: dict[Partition, Offset] = {}
         if custom_partition_offsets is not None:
             custom_partitions = [x[0] for x in custom_partition_offsets]
             custom_offsets = [x[1] for x in custom_partition_offsets]
-            custom_lkp = dict(zip(custom_partitions, custom_offsets))
+            custom_lkp |= dict(zip(custom_partitions, custom_offsets))
         for partition in partition_lkp:
             offset = custom_lkp.get(partition, default_offset)
             topic_partitions.append(TopicPartition(topic, partition, offset))
@@ -284,7 +284,7 @@ class KafkaConnection:
         """return tuples of start and end offsets for topic and partition
         note: this creates a temporary consumer to read them"""
         consumer_client = ConsumerClient(self._consumer_config)
-        lo_hi_or_none: tuple[int, int] | None = consumer_client.get_watermark_offsets(TopicPartition(topic, partition), timeout=10)
+        lo_hi_or_none: tuple[Offset, Offset] | None = consumer_client.get_watermark_offsets(TopicPartition(topic, partition), timeout=10)
         consumer_client.close()
         return lo_hi_or_none
 
@@ -300,13 +300,12 @@ class KafkaConnection:
         return [(tp.partition, tp.offset if tp.offset > 0 else OFFSET_END) for tp in topic_partitions]
 
     def read_batched_messages_from_topic(
-        self, topic: Topic,
-        read_from_end_instead_of_beginning: bool = False,
+        self, topic: Topic, *,
+        batch_size: int = 1000,
         expected_key_type: SerializationType | None = None,
         expected_value_type: SerializationType | None = None,
         custom_start_partition_offsets: list[tuple[Partition, Offset]] | None = None,
-        batch_size: int = 1000,
-        record_callback: Callable[[KafkaRecord], Any] | None = None
+        record_callback: Callable[[KafkaRecord], Any] | None = None,
     ) -> Iterator[list[KafkaRecord | Any]]:
         """
         Reads kafka messages from a kafka topic using the assign-poll method,
@@ -338,9 +337,9 @@ class KafkaConnection:
             - expected_value_type: str | None (default: None)
                 Same as for the key, but applied to the value data.
             - custom_start_partition_offsets: [(partition int, offset int)] | None (default: None)
-                Specifies starting offsets for partitions. Partitions which are not found and therefore
-                not assignable are silently ignored. Partitions which exist but are not mentioned here
-                are either read from the beginning or the end.
+                Force starting offsets for given- and existing partitions.
+                If a given partition does not exist, it is ignored.
+                Offsets for partitions not specified default to OFFSET_BEGINNING
             - batch_size: int (default: 1000)
                 The maximum number of messages to consume before yielding a batch
             - record_callback: (dict -> any) | None (default: None)
@@ -351,19 +350,28 @@ class KafkaConnection:
             - list of records (dicts)
         """
         
+        # validate
         assert expected_key_type is None or expected_key_type in get_args(SerializationType)
         assert expected_value_type is None or expected_value_type in get_args(SerializationType)
+        if custom_start_partition_offsets is not None:
+            for partition, offset in custom_start_partition_offsets:
+                result = self.get_start_and_end_offsets(topic, partition)
+                if result is not None:
+                    offset_lo, offset_hi = result
+                    assert offset >= offset_lo and offset <= offset_hi, f"offset {offset} on partition {partition} is out of bounds"
         
-        # try to cache all before message loop
+        # try to cache all avro schemas before message loop
         if "confluent-avro" in (expected_key_type, expected_value_type):
             self._cached_confluent_schemas = self.find_all_confluent_registry_schemas_for_topic(topic)
-        
+
+        # set up deserializers
         key_deserializer = self._deserializer_map.get(expected_key_type)
         value_deserializer = self._deserializer_map.get(expected_value_type)
         key_bytes_hasher = self._byteshasher_map.get(expected_key_type, bytes_to_sha256_hash)
         value_bytes_hasher = self._byteshasher_map.get(expected_value_type, bytes_to_sha256_hash)
 
-        default_offset = OFFSET_END if read_from_end_instead_of_beginning else OFFSET_BEGINNING
+        # build topic-partition-offset assign list
+        default_offset = OFFSET_BEGINNING # OFFSET_END
         partition_lkp = self._get_partition_lkp(topic)
         topic_partitions = self._build_assignable_list_of_topic_partitions(topic, partition_lkp, default_offset, custom_start_partition_offsets)
         del default_offset
@@ -373,13 +381,15 @@ class KafkaConnection:
         consumer_client.assign(topic_partitions)
         logging.info(f"Assigned to {consumer_client.assignment()}.")
         
-        # main loop
+        # setup main loop
         batch: list[KafkaRecord | Any] = []
         empty_counter = 0
         non_empty_counter = 0
         assignment_count = len(consumer_client.assignment())
+
+        # main loop
         while assignment_count > 0:
-            
+
             message: Message | None = consumer_client.poll(timeout=10)
             if message is None:
                 empty_counter += 1
@@ -387,24 +397,51 @@ class KafkaConnection:
             non_empty_counter += 1
 
             try:
-                err: KafkaError | None = message.error() #  returns None if event or error
+                err: KafkaError | None = message.error() #  None: proper message, KafkaError: event or error 
 
-                # case: event, error
+                # if: event, error
                 if err is not None:
-                    if err.fatal(): # not err.retriable() or err.fatal():
+
+                    # see librdkafka introduction.md: consumer should be destroyed when error is fatal
+                    if err.fatal():
                         raise err
-                    if err.code() == KafkaError._PARTITION_EOF:
-                        err_topic = message.topic()
-                        err_partition = message.partition()
-                        assert err_topic is not None, "Topic missing in EOF sentinel object"
-                        assert err_partition is not None, "Partition missing in EOF sentinel object"
-                        consumer_client.incremental_unassign([TopicPartition(err_topic, err_partition)])
-                        assignment_count -= 1
-                        if assignment_count <= 0:
-                            yield batch
-                            batch = []
-                    else:
-                        logging.error(err.str())
+
+                    # handle non-fatal event/error
+                    match err.code():
+
+                        # Broker: No more messages
+                        case KafkaError._PARTITION_EOF:
+                            err_topic, err_partition = message.topic(), message.partition()
+                            assert err_topic is not None and err_partition is not None
+                            logging.info(f"reached end of partition {err_partition}")
+                            consumer_client.incremental_unassign([TopicPartition(err_topic, err_partition)])
+
+                            # unassign from finished partition
+                            assignment_count -= 1
+                            if assignment_count <= 0:
+                                logging.info("reached end of all partitions")
+                                yield batch
+                                batch = []
+
+                        # Local: No offset to automatically reset to
+                        # In python confluent-kafka lib this may happen when we give an
+                        # invalid starting offset, out-of-range. However, we can only catch it with
+                        # auto.offset.reset='error', that is, as an offset reset error (why?).
+                        # Any offset outside of low watermark and high watermark range will trigger the error.
+                        # Presumably this will also happen if the requested offset doesnt exist,
+                        # even if it is within the range, as the message reads:
+                        # (fetch failed due to requested offset not available on the broker).
+                        case KafkaError._AUTO_OFFSET_RESET:
+                            err_topic, err_partition, err_offset = message.topic(), message.partition(), message.offset()
+                            assert err_topic is not None and err_partition is not None and err_offset is not None
+                            logging.error(f"start offset {err_offset} on partition {err_partition} can not be fetched")
+                            logging.error("if the offset was within the watermark range...")
+                            logging.error("...consider using the closest one (in time) from `get_closest_offsets` instead")
+                            raise err
+
+                        # unhandled errors
+                        case _:
+                            raise err
 
                 # case: proper message
                 else:
@@ -428,6 +465,6 @@ class KafkaConnection:
                 batch = []
                 raise exc
 
-        logging.info(f"Completed with {non_empty_counter} events consumed")
+        logging.info(f"Completed with {non_empty_counter} messages consumed")
         if empty_counter > 0:
             logging.warning(f"found {empty_counter} empty messages")
