@@ -371,14 +371,14 @@ class KafkaConnection:
             for idx, (partition, offset) in enumerate(custom_start_partition_offsets):
                 result = self.get_start_and_end_offsets(topic, partition)
                 if result is None: # timeout, skip validation, will be caught as error in the msg loop anyway
-                    logging.warning("custom start offset validation for partition {partition} failed due to timeout")
+                    logging.warning(f"custom start offset validation for partition {partition} failed due to timeout")
                 else:
                     offset_lo, offset_hi = result
                     if offset < offset_lo or offset > offset_hi:
                         if clip_custom_start_offsets:
                             offset = OFFSET_END if offset > offset_hi else OFFSET_BEGINNING
                             custom_start_partition_offsets[idx] = (partition, offset)
-                            logging.info(f"clipped custom start offset on partition {partition}")
+                            logging.info(f"clipped custom start offset for partition {partition}")
                         else:
                             raise Exception(f"custom start offset {offset} on partition {partition} out-of-bounds")
 
