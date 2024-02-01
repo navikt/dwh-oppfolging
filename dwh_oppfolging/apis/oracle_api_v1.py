@@ -21,12 +21,20 @@ def _fix_timestamp_inputtypehandler(cur: Cursor, val, arrsize: int) -> Var | Non
     return None
 
 
-def create_oracle_connection(username: str) -> Connection:
-    """use in with statement
-    returns oracle connection with db access
-    you have to call .commit() yourself
+def create_oracle_connection(username: str, proxy_schema: str | None = None) -> Connection:
+    """Creates an oracle Connection object. It is recommended to use this in the 'with' statement
+    
+    params:
+        - username, database user
+        - proxy_schema (optional), schema to connect as proxy with
+
+    returns:
+        - oracle Connection object
     """
-    con = connect(**get_oracle_secrets_for(username)) # type: ignore
+    secrets = get_oracle_secrets_for(username)
+    if proxy_schema is not None:
+        secrets["user"] = f"{secrets["user"]}[{proxy_schema}]"
+    con = connect(**secrets) # type: ignore
     con.inputtypehandler = _fix_timestamp_inputtypehandler
     return con
 
