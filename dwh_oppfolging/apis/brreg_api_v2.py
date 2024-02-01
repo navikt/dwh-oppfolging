@@ -6,6 +6,7 @@ from datetime import datetime
 import gzip
 import requests # type: ignore
 import ijson # type: ignore
+from io import BytesIO
 from dwh_oppfolging.transforms.functions import (
     json_to_string,
     string_to_sha256_hash,
@@ -403,6 +404,7 @@ class BrregUnitAPI:
         batch_size: int = 1000,
         unit_callback: Callable[[dict], Any] | None = None,
         unit_filter: Callable[[dict | Any], bool] | None = None,
+        download_entire_file_before_decompressing: bool = False
     ) -> Iterator[list[dict | Any]]:
         """
         Yields lists of units from a large compressed file available in the BRREG API.
@@ -422,6 +424,11 @@ class BrregUnitAPI:
                 if the filter returns true, the callbacked unit is batched, otherwise, it is not batched
                 if not specified, only units which are true are batched
                 (i.e. if bool(unit) is false it is skipped)
+            - download_entire_file_before_decompressing: bool (optional, default: False)
+                If set, the entire response content is downloaded (about 100 MiB) to memory
+                before decompressing. Set this, for example, if experiencing
+                EOFError: Compressed file ended before the end-of-stream marker was reached
+                often.
 
         yields:
             - list of dicts (or whatever callback returns)
@@ -429,23 +436,34 @@ class BrregUnitAPI:
         raises:
             - HTTPError
         """
+
         callback = unit_callback or (lambda x: x)
-        logging.info("requesting filestream from api")
+
         url = self._unit_file_url
         headers = self._unit_file_headers
-        with requests.get(url, headers=headers, stream=True, timeout=100) as response:
+        is_stream = not download_entire_file_before_decompressing
+
+        logging.info("requesting filestream from api")
+        # use with to close() if streaming
+        with requests.get(url, headers=headers, stream=is_stream, timeout=100) as response:
+
             response.raise_for_status()
-            logging.info("decompressing filestream")
-            with gzip.open(response.raw, "rb") as file:
+            compressed_file = response.raw if is_stream else BytesIO(response.content)
+
+            logging.info("decompressing..")
+            with gzip.open(compressed_file, "rb") as file:
                 batch: list[dict | Any] = []
                 logging.info("iterating over json objects")
-                for record in filter(unit_filter, map(callback, ijson.items(file, "item"))):  # type: ignore
+                for record in filter(unit_filter, map(callback, ijson.items(file, "item"))):
                     batch.append(record)
                     if len(batch) >= batch_size:
                         yield batch
                         batch = []
                 if len(batch) > 0:
                     yield batch
+
+            if is_stream: # gzip doesnt close the bytesIO file for us
+                compressed_file.close()
 
 
     def stream_all_units_as_rows_from_file(self, batch_size: int = 1000):
