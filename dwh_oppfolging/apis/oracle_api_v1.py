@@ -33,7 +33,7 @@ def create_oracle_connection(username: str, proxy_schema: str | None = None) -> 
     """
     secrets = get_oracle_secrets_for(username)
     if proxy_schema is not None:
-        secrets["user"] = f"{secrets["user"]}[{proxy_schema}]"
+        secrets["user"] = f"{secrets['user']}[{proxy_schema}]"
     con = connect(**secrets) # type: ignore
     con.inputtypehandler = _fix_timestamp_inputtypehandler
     return con
