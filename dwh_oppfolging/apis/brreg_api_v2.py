@@ -220,7 +220,7 @@ class BrregUnitAPI:
                 updates = document["_embedded"][self._unit_updates_list_key]
                 assert isinstance(updates, list) and len(updates) > 0
             except (KeyError, AssertionError):
-                logging.debug(f"No further updates found for orgnr {orgnr}")
+                logging.info(f"No further updates found for orgnr {orgnr}")
                 break
             # Note: According to the BRREG API documentation, filtering on updateid + 1 is safe (it is also sorted ascending).
             params["oppdateringsid"] = updates[-1]["oppdateringsid"] + 1
