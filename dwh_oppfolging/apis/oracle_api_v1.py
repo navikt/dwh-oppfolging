@@ -235,7 +235,7 @@ def _insert_to_table_gen(
     continue_on_db_errors: bool = False
 ):
     # for non-iterators: coerce to iterator to avoid inserting 1 row at a time, or just the dict keys
-    if isinstance(data, dict) or (isinstance(data, list) and isinstance(data[0], dict)):
+    if isinstance(data, dict) or (isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict)):
         data = iter([data])
 
     # insert data
