@@ -24,7 +24,7 @@ fastavro = "1.9.3"
 black = "24.1.1"
 mypy = "1.8.0"
 pylint = "3.0.3"
-pytest = "8.0.0"
+pytest = "8.0.1"
 
 [build-system]
 requires = ["poetry-core"]
