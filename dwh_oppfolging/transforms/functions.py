@@ -7,23 +7,70 @@ import json
 import re
 import pendulum.parser
 from pendulum.datetime import DateTime as PendulumDateTime
+from typing import Iterable, Mapping
 
 
-def find_in_dict(mapping: dict, path: list) -> Any | None:
+def batch_it(it: Iterable, n: int) -> Iterable:
+    """Batch the output of an iterable (for example: a generator with yield only)
+        i.e. returning another iterator which yields batches
+    
+    params:
+        - it: an iterator
+        - n: batch size integer >= 1
+        - container: list or tuple (default: list)
+
+    yields:
+        list (or tuple) of iterator's output, of at most size n
+
+    >>> list(batch_it(range(4), n=3))
+    [[0, 1, 2], [3]]
+    """
+    batch = []
+    for x in it:
+        batch.append(x)
+        if len(batch) >= n:
+            yield batch
+            batch = []
+    if len(batch) > 0:
+        yield batch
+
+
+def find_in_dict(mapping: Mapping, path: list, raise_on_missing: bool = False) -> Any | None:
     """
     recursively searches for value at path in dict
+    useful for nested dicts
     returns value if found, None otherwise
+    if throw_if_missing is set, will throw KeyError instead
+
+    params:
+        - mapping: dict, the dict to search
+        - path: a list of keys such that item = data[key1][key2][key3]..
+        - raise_on_missing (optional), default: False
+            throw if item cannot be found
+
+    returns:
+        - the value at the path or None
+
+    raises (if set):
+        - KeyError
+        - possibly other errors if nested value is not a mapping
+
     >>> find_in_dict({0: {1: 2}}, [0, 1])
     2
-    >>> find_in_dict({}, [0, 1, 2])
+    >>> try: find_in_dict({}, [0, 1, 2], True)
+    ... except KeyError as exc: exc.args[0]
+    0
     """
-    try:
-        return reduce(lambda d,k: d.get(k), path, mapping) # type: ignore
-    except Exception: # pylint: disable=broad-except
-        return None
+    if raise_on_missing:
+        return reduce(lambda d,k: d[k], path, mapping)
+    else:
+        try:
+            return reduce(lambda d,k: d.get(k), path, mapping) # type: ignore
+        except Exception: # pylint: disable=broad-except
+            return None
 
 
-def flatten_dict(mapping: dict, sep: str = "_", flatten_lists: bool = False) -> dict[str, Any]:
+def flatten_dict(mapping: Mapping, sep: str = "_", flatten_lists: bool = False) -> Mapping[str, Any]:
     """
     recursively flattens dict with specified separator
     optionally flatten lists in it as well
@@ -31,11 +78,11 @@ def flatten_dict(mapping: dict, sep: str = "_", flatten_lists: bool = False) -> 
     >>> flatten_dict({0: {1: 3}, 'z': [1, 2, 3]}, "_", True)
     {'0_1': 3, 'z_0': 1, 'z_1': 2, 'z_2': 3}
     """
-    def flatten(mapping: dict, parent_key: str = "") -> dict:
+    def flatten(mapping: Mapping, parent_key: str = "") -> Mapping:
         items: list[Any] = []
         for key, value in mapping.items():
             flat_key = str(key) if not parent_key else str(parent_key) + sep + str(key)
-            if isinstance(value, dict):
+            if isinstance(value, Mapping):
                 items.extend(flatten(value, flat_key).items())
             elif isinstance(value, list) and flatten_lists:
                 for it_key, it_value in enumerate(value):
