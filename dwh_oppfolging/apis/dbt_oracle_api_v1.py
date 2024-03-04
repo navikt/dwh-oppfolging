@@ -3,23 +3,37 @@ import os
 import subprocess
 from contextlib import contextmanager
 from typing import Generator
-from dwh_oppfolging.apis.secrets_api_v1 import get_dbt_oracle_secrets_for
+from dwh_oppfolging.apis.secrets_api_v1 import get_oracle_user_credentials
 import logging
 
 
 @contextmanager
-def create_dbt_oracle_context(username: str) -> Generator[None, None, None]:
+def create_dbt_oracle_context(schema: str) -> Generator[None, None, None]:
     """
-    use in with statement
-    yields nothing
-    but sets and unsets environment variables referenced by dbt profile
+    Creates a dbt context setting environment variables used by dbt profile.
+    Use in a 'with' statement
+
+    params:
+        - schema, str: the schema the dbt project operates in.
+    
+    yields:
+        - None
     """
-    config = get_dbt_oracle_secrets_for(username)
-    config |= {"ORA_PYTHON_DRIVER_TYPE": "thin"}
-    os.environ.update(config)
+    creds = get_oracle_user_credentials(schema)
+    dbt_env_params = {
+        "DBT_ENV_SECRET_USER": creds["user"],
+        "DBT_ENV_SECRET_PASS": creds["pwd"],
+        "DBT_ENV_SECRET_HOST": creds["host"],
+        "DBT_ENV_SECRET_PORT": creds["port"],
+        "DBT_ENV_SECRET_SERVICE": creds["service"],
+        "DBT_ENV_SECRET_DATABASE": creds["database"],
+        "DBT_ENV_SECRET_SCHEMA": schema,
+        "ORA_PYTHON_DRIVER_TYPE": "thin",
+    }
+    os.environ.update(dbt_env_params)
     yield
-    for k in config:
-        os.environ.pop(k)
+    for key in dbt_env_params:
+        os.environ.pop(key)
 
 
 def execute_dbt_project(command: str, profiles_dir: str, project_dir: str, *args):

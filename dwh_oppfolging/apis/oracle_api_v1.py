@@ -10,7 +10,7 @@ from oracledb.cursor import Cursor
 from oracledb.var import Var
 from oracledb import TIMESTAMP
 
-from dwh_oppfolging.apis.secrets_api_v1 import get_oracle_secrets_for
+from dwh_oppfolging.apis.secrets_api_v1 import get_oracle_user_credentials
 from dwh_oppfolging.apis.oracle_api_v1_types import Row
 
 
@@ -21,20 +21,28 @@ def _fix_timestamp_inputtypehandler(cur: Cursor, val, arrsize: int) -> Var | Non
     return None
 
 
-def create_oracle_connection(username: str, proxy_schema: str | None = None) -> Connection:
-    """Creates an oracle Connection object. It is recommended to use this in the 'with' statement
+def create_oracle_connection(schema: str, as_proxy: bool = False) -> Connection:
+    """
+    Creates an oracle Connection object.
+    It is recommended to use this in a 'with' statement for context management.
     
     params:
-        - username, database user
-        - proxy_schema (optional), schema to connect as proxy with
+        - schema, str: the oracle user with full access to this schema
+        - as_proxy, bool (False): whether the implied user connects as proxy
+            Note: without proxy access, DDL is not available.
 
     returns:
         - oracle Connection object
     """
-    secrets = get_oracle_secrets_for(username)
-    if proxy_schema is not None:
-        secrets["user"] = f"{secrets['user']}[{proxy_schema}]"
-    con = connect(**secrets) # type: ignore
+    creds = get_oracle_user_credentials(schema)
+
+    con = connect(
+        user=creds["user"] if not as_proxy else creds["user"] + f"[{schema}]",
+        password=creds["pwd"],
+        host=creds["host"],
+        port=creds["port"],
+        service_name=creds["service"]
+    )
     con.inputtypehandler = _fix_timestamp_inputtypehandler
     return con
 

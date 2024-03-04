@@ -67,22 +67,22 @@ class _DeserializationError(Exception):
 
 class KafkaConnection:
     """connection class for kafka admin and consumer"""
-    def __init__(self, secrets: dict[str, Any]) -> None:
+    def __init__(self, creds: dict[str, Any]) -> None:
         
         self._admin_config = {
-            "bootstrap.servers": secrets["KAFKA_BROKERS"],
+            "bootstrap.servers": creds["KAFKA_BROKERS"],
             "security.protocol": "SSL",
-            "ssl.key.pem": secrets["KAFKA_PRIVATE_KEY"],
-            "ssl.certificate.pem": secrets["KAFKA_CERTIFICATE"],
-            "ssl.ca.pem": secrets["KAFKA_CA"],
+            "ssl.key.pem": creds["KAFKA_PRIVATE_KEY"],
+            "ssl.certificate.pem": creds["KAFKA_CERTIFICATE"],
+            "ssl.ca.pem": creds["KAFKA_CA"],
         }
 
         self._schema_registry_config = {
-            "url": secrets["KAFKA_SCHEMA_REGISTRY"],
+            "url": creds["KAFKA_SCHEMA_REGISTRY"],
             "basic.auth.user.info": \
-                secrets["KAFKA_SCHEMA_REGISTRY_USER"]
+                creds["KAFKA_SCHEMA_REGISTRY_USER"]
                 + ":"
-                + secrets["KAFKA_SCHEMA_REGISTRY_PASSWORD"]
+                + creds["KAFKA_SCHEMA_REGISTRY_PASSWORD"]
         }
 
         self._consumer_config = self._admin_config | {
@@ -482,8 +482,9 @@ class KafkaConnection:
             except Exception as exc:
                 logging.error("Bailing out...")
                 consumer_client.close()
-                yield batch
-                batch = []
+                if len(batch) > 0:
+                    yield batch
+                    batch = []
                 raise exc
 
         logging.info(f"Completed with {non_empty_counter} messages consumed")

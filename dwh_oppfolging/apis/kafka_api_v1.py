@@ -1,7 +1,7 @@
 "kafka api"
 from contextlib import contextmanager
 import requests # type: ignore
-from dwh_oppfolging.apis.secrets_api_v1 import get_kafka_secrets
+from dwh_oppfolging.apis.secrets_api_v1 import get_kafka_user_credentials
 from dwh_oppfolging.apis.kafka_api_v1_types import KafkaConnection
 
 
@@ -16,8 +16,8 @@ def create_kafka_connection(teamname: str):
     """
     authenticates and connects to kafka, enabling reading from topics
     """
-    secrets = get_kafka_secrets(teamname)
-    con = KafkaConnection(secrets)
+    creds = get_kafka_user_credentials()
+    con = KafkaConnection(creds)
     yield con
     #del con
     #del secrets
