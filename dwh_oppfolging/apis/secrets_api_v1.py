@@ -23,7 +23,7 @@ def get_knada_gke_secret():
     returns:
         - secret dict
     """
-    return _get_google_cloud_secret(os.environ["KNADA_TEAM_SECRET"]) # envs set by KNADA
+    return _get_google_cloud_secret(os.environ["KNADA_TEAM_SECRET"]) # set by KNADA
 
 
 def get_project_secret(project_id: str, secret_name: str):
@@ -43,8 +43,7 @@ def get_project_secret(project_id: str, secret_name: str):
 
 
 def _get_kafka_secret():
-    kafka_secret_name = os.environ.get("GCP_KAFKA_SECRET_NAME", "kafka-credentials") # envs set by user
-    return get_project_secret(os.environ["GCP_TEAM_PROJECT_ID"], kafka_secret_name)
+    return get_project_secret(os.environ["GCP_TEAM_PROJECT_ID"], os.environ["GCP_KAFKA_SECRET_NAME"]) # set by user
 
 
 def get_kafka_user_credentials(user: str = ""):
@@ -62,8 +61,7 @@ def get_kafka_user_credentials(user: str = ""):
 
 
 def _get_oracle_secret():
-    oracle_secret_name = os.environ.get("GCP_ORACLE_SECRET_NAME", "oracle-credentials") # envs set by user
-    return get_project_secret(os.environ["GCP_TEAM_PROJECT_ID"], oracle_secret_name)
+    return get_project_secret(os.environ["GCP_TEAM_PROJECT_ID"], os.environ["GCP_ORACLE_SECRET_NAME"]) # set by user
 
 
 def get_oracle_user_credentials(schema: str):
