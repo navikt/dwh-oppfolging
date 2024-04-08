@@ -21,7 +21,7 @@ def create_dbt_oracle_context(schema: str) -> Generator[None, None, None]:
     """
     creds = get_oracle_user_credentials(schema)
     dbt_env_params = {
-        "DBT_ENV_SECRET_USER": creds["user"],
+        "DBT_ENV_SECRET_USER": creds["user"] + f"[{schema}]",
         "DBT_ENV_SECRET_PASS": creds["pwd"],
         "DBT_ENV_SECRET_HOST": creds["host"],
         "DBT_ENV_SECRET_PORT": creds["port"],
