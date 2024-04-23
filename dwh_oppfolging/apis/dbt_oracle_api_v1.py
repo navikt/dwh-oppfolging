@@ -30,6 +30,8 @@ def create_dbt_oracle_context(schema: str) -> Generator[None, None, None]:
         "DBT_ENV_SECRET_SCHEMA": schema,
         "ORA_PYTHON_DRIVER_TYPE": "thin",
     }
+    for val in dbt_env_params.values():
+        assert isinstance(val, str), "All dbt env var values must be strings"
     os.environ.update(dbt_env_params)
     yield
     for key in dbt_env_params:
