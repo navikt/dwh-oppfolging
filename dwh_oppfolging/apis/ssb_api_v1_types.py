@@ -62,9 +62,9 @@ class CorrespondenceHeader(NamedTuple):
     @classmethod
     def from_json(cls, data: dict):
         """Constructs CorrespondenceHeader from an entry in the json-version's correspondenceTables"""
-        self_url = data["_links"]["self"]["href"]
-        source_url = data["_links"]["source"]["href"]
-        target_url = data["_links"]["target"]["href"]
+        self_url = data["_links"]["self"]["href"].replace("http", "https")
+        source_url = data["_links"]["source"]["href"].replace("http", "https")
+        target_url = data["_links"]["target"]["href"].replace("http", "https")
         last_modified = string_to_naive_norwegian_datetime(data["lastModified"])
         return CorrespondenceHeader(
             data["name"], data["owningSection"], data["source"], data["sourceId"], data["target"],
@@ -141,7 +141,7 @@ class VersionHeader(NamedTuple):
     @classmethod
     def from_json(cls, data: dict) -> Self:
         """Constructs VersionHeader from an entry in the json-classification's versions list"""
-        url: str = data["_links"]["self"]["href"]
+        url: str = data["_links"]["self"]["href"].replace("http", "https")
         version_id: int = int(url[url.rfind("/")+1:])
         #valid_from = string_to_naive_norwegian_datetime(data["validFrom"])
         #valid_to = string_to_naive_norwegian_datetime(data["validTo"]) if "validTo" in data else None
@@ -178,7 +178,7 @@ class Classification(NamedTuple):
         """Constructs Classification from json-classification"""
         versions = [VersionHeader.from_json(version) for version in data["versions"]]
         last_modified =  string_to_naive_norwegian_datetime(data["lastModified"])
-        url = data["_links"]["self"]["href"]
+        url = data["_links"]["self"]["href"].replace("http", "https")
         classification_id = int(url[url.rindex("/") + 1 :])
         return cls(
             data["name"], last_modified, data["description"],
@@ -230,7 +230,7 @@ class Version(NamedTuple):
         valid_from = datetime.strptime(data["validFrom"], _VALID_DATE_FMT)
         valid_to = datetime.strptime(data["validTo"], _VALID_DATE_FMT) if "validTo" in data else None
         corr_tables = [CorrespondenceHeader.from_json(corr) for corr in data["correspondenceTables"]]
-        url = data["_links"]["self"]["href"]
+        url = data["_links"]["self"]["href"].replace("http", "https")
         version_id = int(url[url.rindex("/") + 1 :])
         return cls(
             data["name"], valid_from, valid_to, last_modified, data["introduction"], classification_id,
