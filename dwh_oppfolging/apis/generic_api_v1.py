@@ -19,11 +19,11 @@ def get_json_from_url(url: str, schema: Any = None) -> Any:
     return obj
 
 
-def run_subprocess(args: list, secrets: list[str] = []) -> tuple[int, str]:
+def run_subprocess(args: list, secrets: list[str] = [], timeout: float|None = 3600) -> tuple[int, str]:
     """
     run a subprocess and return the exit code and one of stdout/stderr
-    stdout, stderr are captured with subprocess.PIPE so that nothing appears in the airflow logs when it is running
-    but this way any secrets in stdout and stderr can be removed before finally outputting to airflow log
+    stdout, stderr are captured with subprocess.PIPE so that nothing appears in the logs when it is running
+    but this way any secrets in stdout and stderr can be removed before finally outputting to log
 
     NB: this function does not raise an exception if the subprocess returns a non-zero exit code
         to determine if the subprocess was successful, check the return code in the tuple.
@@ -42,25 +42,39 @@ def run_subprocess(args: list, secrets: list[str] = []) -> tuple[int, str]:
     try:
         logging.info("Running subprocess...")
         p_result = subprocess.run(
-            args, check=True
+            args
+            , check=True
             , encoding="utf-8"
             , stdout=subprocess.PIPE
             , stderr=subprocess.PIPE
+            , timeout=timeout
         )
+
     except subprocess.CalledProcessError as exc:
-        p_errcmd = filter_secrets(str(exc.cmd), secrets)
+        p_cmd = filter_secrets(str(exc.cmd), secrets)
         p_rcode = exc.returncode
-        logging.error(f"Subprocess {p_errcmd} returned non-zero exit status {p_rcode}.")
+        logging.error(f"Subprocess {p_cmd} returned non-zero exit status {p_rcode}.")
         p_stdout = filter_secrets(exc.stdout, secrets)
         p_stderr = filter_secrets(exc.stderr, secrets)
         logging.error(p_stdout)
         logging.error(p_stderr)
         return p_rcode, p_stderr
+
+    except subprocess.TimeoutExpired as exc:
+        p_cmd = filter_secrets(str(exc.cmd), secrets)
+        logging.error(f"Subprocess {p_cmd} timed out after {timeout}s.")
+        p_stdout = filter_secrets(str(exc.stdout), secrets)
+        p_stderr = filter_secrets(str(exc.stderr), secrets)
+        logging.error(p_stdout)
+        logging.error(p_stderr)
+        return -1, p_stderr
+
     except Exception as exc:
         exc_out = filter_secrets(str(exc), secrets)
         logging.error("Unexpected error!")
         logging.error(exc_out)
         raise Exception from None
+
     else:
         p_args = filter_secrets(str(p_result.args), secrets)
         logging.info(f"Subprocess {p_args} completed succesfully.")
