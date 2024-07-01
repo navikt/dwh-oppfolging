@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dwh-oppfolging"
-version = "0.0.96"
+version = "0.0.97"
 description = "Oppfolging python package for DWH ETL"
 authors = ["Team Oppfølging"]
 packages = [{include = "dwh_oppfolging"}]
@@ -19,6 +19,7 @@ dbt-oracle = "1.7.6"    # denne krever cx_Oracle 8.3, som vi ikke klarer å bygg
 google-cloud-secret-manager = "2.20.0"
 confluent-kafka = "2.4.0"
 fastavro = "1.9.4"
+google-cloud-bigquery = "3.25.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "*"

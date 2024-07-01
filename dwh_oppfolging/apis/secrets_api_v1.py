@@ -1,4 +1,4 @@
-"secrets api"
+"secrets api, assumes GOOGLE_APPLICATION_CREDENTIALS is set to a service account key file path"
 import os
 import json
 from typing import Any
@@ -42,10 +42,6 @@ def get_project_secret(project_id: str, secret_name: str):
     return _get_google_cloud_secret(secret_path)
 
 
-def _get_kafka_secret():
-    return get_project_secret(os.environ["GCP_TEAM_PROJECT_ID"], os.environ["GCP_KAFKA_SECRET_NAME"]) # set by user
-
-
 def get_kafka_user_credentials(user: str = ""):
     """
     Gets the latest version of the kafka-credentials secret.
@@ -57,11 +53,7 @@ def get_kafka_user_credentials(user: str = ""):
     """
     if user:
         raise NotImplementedError
-    return _get_kafka_secret()
-
-
-def _get_oracle_secret():
-    return get_project_secret(os.environ["GCP_TEAM_PROJECT_ID"], os.environ["GCP_ORACLE_SECRET_NAME"]) # set by user
+    return get_project_secret(os.environ["GCP_TEAM_PROJECT_ID"], os.environ["GCP_KAFKA_SECRET_NAME"]) # set by user
 
 
 def get_oracle_user_credentials(schema: str):
@@ -75,7 +67,17 @@ def get_oracle_user_credentials(schema: str):
     returns:
         - user credentials dict
     """
-    secret = _get_oracle_secret()
+    secret = get_project_secret(os.environ["GCP_TEAM_PROJECT_ID"], os.environ["GCP_ORACLE_SECRET_NAME"]) # set by user
     creds = secret["dsn"] # host, port, service, database
     creds |= secret["schemas"][schema] # user, pwd
     return creds
+
+
+def get_bigquery_user_credentials(user: str = ""):
+    """
+    Gets the latest version of the bigquery-credentials secret.
+    This is actually a service account which we need to impersonate?
+    """
+    if user:
+        raise NotImplementedError
+    return get_project_secret(os.environ["GCP_TEAM_PROJECT_ID"], os.environ["GCP_BIGQUERY_SECRET_NAME"]) # set by user
