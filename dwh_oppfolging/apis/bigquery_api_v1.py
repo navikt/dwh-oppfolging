@@ -2,11 +2,10 @@
 
 import json
 from contextlib import contextmanager
-from typing import Generator, TypeVar
+from typing import Generator, TypeVar, cast
 from google.cloud.bigquery import Client, QueryJobConfig
 from google.oauth2 import service_account
 from dwh_oppfolging.apis.secrets_api_v1 import get_bigquery_user_credentials
-
 
 
 
@@ -19,11 +18,12 @@ def create_google_bigquery_connection(teamname: str):
     yield Client(credentials=credentials)
 
 
+T = TypeVar("T", dict, tuple, str)
 def read_rows_from_query(
     client: Client,
     query: str,
     batch_size: int = 100,
-    row_type: type[dict] | type[tuple] | type[str] = dict,
+    row_type: type[T] = dict,
     job_config: QueryJobConfig | None = None
 ):
     """
@@ -42,6 +42,15 @@ def read_rows_from_query(
             tuple gives oracle style row results i.e. tuple(val1, val2, ...)
             str gives json dumps of the record, like with kafka api
         job_config: google.cloud.bigquery.QueryJobConfig, optional query job configuration
+            example:
+            ```python
+            query="select * from depts where dept_id = @deptName"
+            job_config=QueryJobConfig(
+                query_parameters=[
+                    ScalarQueryParameter("deptName", "STRING", "Sales")
+                ]
+            )
+            ```
     """
     to_rows = None
     if row_type == dict:
@@ -55,7 +64,7 @@ def read_rows_from_query(
     job = client.query(query, job_config=job_config)
     rowiter = job.result(page_size=batch_size) # wait for job to finish
     for page in rowiter.pages:
-        rows = to_rows(page)
+        rows = cast(list[T], to_rows(page))
         if rows:
             yield rows
 
@@ -79,3 +88,4 @@ def insert_rows_to_table(
     errors = client.insert_rows(table_ref, rows, job_config=job_config)
     if errors:
         raise ValueError(f"Errors inserting rows: {errors}")
+ 
