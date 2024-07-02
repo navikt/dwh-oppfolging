@@ -2,6 +2,7 @@
 
 import json
 from contextlib import contextmanager
+from typing import Generator, TypeVar
 from google.cloud.bigquery import Client, QueryJobConfig
 from google.oauth2 import service_account
 from dwh_oppfolging.apis.secrets_api_v1 import get_bigquery_user_credentials
@@ -54,4 +55,27 @@ def read_rows_from_query(
     job = client.query(query, job_config=job_config)
     rowiter = job.result(page_size=batch_size) # wait for job to finish
     for page in rowiter.pages:
-        yield to_rows(page)
+        rows = to_rows(page)
+        if rows:
+            yield rows
+
+
+def insert_rows_to_table(
+    client: Client,
+    table: str,
+    rows: list[dict],
+    job_config: QueryJobConfig | None = None
+):
+    """
+    Insert rows into a bigquery table
+
+    params:
+        client: google.cloud.bigquery.Client
+        table: str, table name in format 'project.dataset.table'
+        rows: list[dict], list of rows to insert
+        job_config: google.cloud.bigquery.QueryJobConfig, optional query job configuration
+    """
+    table_ref = client.get_table(table)
+    errors = client.insert_rows(table_ref, rows, job_config=job_config)
+    if errors:
+        raise ValueError(f"Errors inserting rows: {errors}")
