@@ -34,6 +34,17 @@ class Level(TypedDict):
     levelName: str
 
 
+class ChangelogItem(NamedTuple):
+    """ChangelogItem in SSB API"""
+    changeOccured: datetime 
+    description: str
+    @classmethod
+    def from_json(cls, data: dict) -> Self:
+        """Constructs ChangelogItem from an entry in the json-version's changelogs"""
+        change_occured = string_to_naive_norwegian_datetime(data["changeOccured"])
+        return cls(change_occured, data["description"])
+
+
 class CorrespondenceHeader(NamedTuple):
     """Correspondence Header as appearing in versions' correspondenceTables"""
     name: str
@@ -211,7 +222,7 @@ class Version(NamedTuple):
     """Owning section of version"""
     derived_from: str | None
     """Standards and/or related groupings this version is derived from"""
-    changelogs: list[str] | None
+    changelogs: list[ChangelogItem] | None
     """List of short descriptions of changes made to this version"""
     levels: list[Level]
     """List of levels, their index and name"""
@@ -230,11 +241,12 @@ class Version(NamedTuple):
         valid_from = datetime.strptime(data["validFrom"], _VALID_DATE_FMT)
         valid_to = datetime.strptime(data["validTo"], _VALID_DATE_FMT) if "validTo" in data else None
         corr_tables = [CorrespondenceHeader.from_json(corr) for corr in data["correspondenceTables"]]
+        changelogs = [ChangelogItem.from_json(entry) for entry in data.get("changelogs", [])] or None
         url = data["_links"]["self"]["href"].replace("http:", "https:", 1)
         version_id = int(url[url.rindex("/") + 1 :])
         return cls(
             data["name"], valid_from, valid_to, last_modified, data["introduction"], classification_id,
-            version_id, data["owningSection"], data.get("derivedFrom"), data.get("changelogs"), data["levels"],
+            version_id, data["owningSection"], data.get("derivedFrom"), changelogs, data["levels"],
             data["classificationItems"], corr_tables
             )
 
@@ -265,6 +277,7 @@ class Version(NamedTuple):
         record["versjon_navn"] = self.name
         record["utledet_fra_besk"] = self.derived_from
         record["nivaa_antall"] = len(self.levels)
+        record["oppdatert_besk"] = self.changelogs[-1].description if self.changelogs else None
         record["oppdatert_tid_kilde"] = self.last_modified
         record["gyldig_fom_tid_kilde"] = self.valid_from
         record["gyldig_til_tid_kilde"] = self.valid_to
