@@ -17,7 +17,7 @@ oracledb = "2.2.1"      # versjonen her begrenses av dbt-oracle, så dbt-oracle 
 dbt-oracle = "1.8.0"    # denne krever cx_Oracle 8.3, som vi ikke klarer å bygge uten gcc
                         # 3.11-slim har ikke gcc, men 3.11 har det, men den er +700 MB..
 google-cloud-secret-manager = "2.20.0"
-confluent-kafka = "2.4.0"
+confluent-kafka = "2.5.0"
 fastavro = "1.9.4"
 google-cloud-bigquery = "3.25.0"
 
