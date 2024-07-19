@@ -1,7 +1,7 @@
 "oracle api"
 
 import logging
-from typing import Iterator
+from typing import Sequence, cast
 from datetime import datetime, timedelta
 
 from oracledb.connection import Connection # pylint: disable=no-name-in-module
@@ -11,10 +11,31 @@ from oracledb.var import Var
 from oracledb import TIMESTAMP
 
 from dwh_oppfolging.apis.secrets_api_v1 import get_oracle_user_credentials
-from dwh_oppfolging.apis.oracle_api_v1_types import Row
+from dwh_oppfolging.apis.oracle_api_v1_types import (
+    Row, BatchedRow, GeneratedRow, BatchedBatchedRow, GeneratedBatchedRow
+)
 
 
 def _fix_timestamp_inputtypehandler(cur: Cursor, val, arrsize: int) -> Var | None:
+    """
+    NOTE: This function is only called on the first cursor.execute()/executemany() call
+    where oracledb is attempting to determine database datatypes.
+    
+    Therefore if cursor.setinputsizes() is not used to specify DB_TYPE_TIMESTAMP
+    before the first cursor.execute()/executemany() call, and the first batch has
+    no microseconds in the python datetime object,
+    oracledb will assume the database datatype is DATE in all subsequent batches
+    and so microsecond precision is lost!
+
+    Moreover, if in the first batch the python object is all None (i.e. NULL) oracledb assumes
+    the database datatype is varchar(1). This means subsequent batches may fail when
+    actual data arrives where the python object is actually datetime or something else
+    which implicitly cannot be converted to varchar(1), meaning a DPY-3013 is thrown.
+
+    The only way to avoid these problems is to use a new cursor each batch or 
+    set inputsizes correctly before the first execute()/executemany() call
+    for the columns which may cause trouble.
+    """
     if isinstance(val, datetime) and val.microsecond > 0:
         return cur.var(TIMESTAMP, arraysize=arrsize) # pylint: disable=no-member
     # No return value implies default type handling
@@ -236,28 +257,46 @@ def _insert_to_table_gen(
     cur: Cursor,
     schema: str,
     table: str,
-    data: Iterator[list[Row] | Row] | list[Row] | Row,
+    data: BatchedRow | GeneratedRow | BatchedBatchedRow | GeneratedBatchedRow | Row,
     unique_columns: list[str] | None = None,
     additional_where_clauses: list[str] | None = None,
     enable_etl_logging: bool = False,
     continue_on_db_errors: bool = False
 ):
-    # for non-iterators: coerce to iterator to avoid inserting 1 row at a time, or just the dict keys
-    if isinstance(data, dict) or (isinstance(data, list) and len(data) > 0 and isinstance(data[0], dict)):
-        data = iter([data])
+    # coerce Row case to BatchedBatchedrow
+    if isinstance(data, dict):
+        data = [[data]]
+        data = cast(Sequence[Sequence[Row]], data)
+    # coerce BatchedRow to BatchedBatchedRow
+    elif isinstance(data, Sequence):
+        if len(data) > 0 and isinstance(data[0], dict):
+            data = cast(Sequence[Row], data) # assume all items are dicts
+            data = [data]
+        elif len(data) == 0:
+            # unable to determine if it is a SeqSeq[row] or Seq[Row] since the outermost Seq is empty
+            # in this case the for-loop below will not do anything because the Seq is empty
+            pass
+
+        data = cast(Sequence[Sequence[Row]], data)
+    # now data must be one of GeneratedRow, GeneratedBatchedRow or BatchedBatchedRow
 
     # insert data
     insert_sql = ""
     rows_inserted = 0
+    
     for item in data:
-        if not isinstance(item, list):
-            item = [item]
+        if not isinstance(item, Sequence):
+            item = cast(Sequence[Row], [item]) # treat GeneratedRow as GeneratedBatchedRow
         elif len(item) == 0:
             continue
         if not insert_sql:
-            cols = [*(item[0])]
+            cols = [*(item[0])] # get keys, these are column names
             insert_sql = build_insert_sql_string(schema, table, cols, unique_columns, additional_where_clauses)
-        cur.executemany(insert_sql, item, batcherrors=continue_on_db_errors)
+        cur.executemany(
+            insert_sql, 
+            item, # type: ignore "Sequence[Row]" is incompatible with "list[Unknown]"
+            batcherrors=continue_on_db_errors
+        )
         batcherrors = cur.getbatcherrors() or []
         rows_inserted += cur.rowcount
         yield (cur.rowcount, batcherrors)
@@ -269,7 +308,7 @@ def insert_to_table(
     cur: Cursor,
     schema: str,
     table: str,
-    data: Iterator[list[Row] | Row] | list[Row] | Row,
+    data: BatchedRow | GeneratedRow | BatchedBatchedRow | GeneratedBatchedRow | Row,
     unique_columns: list[str] | None = None,
     additional_where_clauses: list[str] | None = None,
     enable_etl_logging: bool = True,
@@ -302,7 +341,7 @@ def create_table_insert_generator(
     cur: Cursor,
     schema: str,
     table: str,
-    data: Iterator[list[Row] | Row] | list[Row] | Row,
+    data: BatchedRow | GeneratedRow | BatchedBatchedRow | GeneratedBatchedRow | Row,
     unique_columns: list[str] | None = None,
     additional_where_clauses: list[str] | None = None,
     enable_etl_logging: bool = True,
