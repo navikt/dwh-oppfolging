@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.1.1
+- upgraded oracledb = "2.3.0", dbt-oracle = "1.8.1", google-cloud-secret-manager = "2.20.2", confluent-kafka = "2.5.3", fastavro = "1.9.7"
+- log_etl() now "resets" inputsize in case it was set by binding names and no sql statement was executed before logging statement, as this causes DPY-2006
+
 ## 0.1.0
 - upgraded google-cloud-secret-manager = "2.20.2"
 

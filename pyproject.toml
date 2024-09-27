@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dwh-oppfolging"
-version = "0.1"
+version = "0.1.1"
 description = "Oppfolging python package for DWH ETL"
 authors = ["Team Oppfølging"]
 packages = [{include = "dwh_oppfolging"}]
@@ -13,12 +13,12 @@ python = "3.11.*"       # python 3.12 mangler distutils, som ødelegger installa
 requests = "2.32.3"
 pendulum = "3.0.0"      # fjernet airflow/dataverk i dev fordi den bruker en eldgammel versjon av pendulum
 ijson = "3.3.0"
-oracledb = "2.2.1"      # versjonen her begrenses av dbt-oracle, så dbt-oracle må oppgraderes først
-dbt-oracle = "1.8.0"    # denne krever cx_Oracle 8.3, som vi ikke klarer å bygge uten gcc
+oracledb = "2.3.0"      # versjonen her begrenses av dbt-oracle, så dbt-oracle må oppgraderes først
+dbt-oracle = "1.8.1"    # denne krever cx_Oracle 8.3, som vi ikke klarer å bygge uten gcc
                         # 3.11-slim har ikke gcc, men 3.11 har det, men den er +700 MB..
 google-cloud-secret-manager = "2.20.2"
-confluent-kafka = "2.5.0"
-fastavro = "1.9.5"
+confluent-kafka = "2.5.3"
+fastavro = "1.9.7"
 google-cloud-bigquery = "3.25.0"
 
 [tool.poetry.group.dev.dependencies]
