@@ -81,7 +81,10 @@ def log_etl(
     """
     inserts into logging table, does not commit
     """
-    sql = f"insert into {schema}.etl_logg select :0,:1,:2,:3,:4,:5 from dual"
+    if isinstance(cur.bindvars, dict):
+        cur.setinputsizes(None)
+    sql = f"insert into {schema}.etl_logg select :1,:2,:3,:4,:5,:6 from dual"
+    cur.setinputsizes(None) # reset inputsizes to avoid DPY-2006 and DPY-4008
     cur.execute(sql, [table, etl_date, rows_inserted, rows_updated, rows_deleted, log_text])
     logging.info(f"logged etl for {table}")
 
