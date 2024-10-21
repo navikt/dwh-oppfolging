@@ -277,6 +277,10 @@ class Version(NamedTuple):
         record["versjon_navn"] = self.name
         record["utledet_fra_besk"] = self.derived_from
         record["nivaa_antall"] = len(self.levels)
+        for i in range(6):
+            record[f"nivaa{i+1}_navn"]  = "N/A"
+        for entry in self.levels:
+            record[f"nivaa{entry['levelNumber']}_navn"] = entry["levelName"]
         record["oppdatert_besk"] = self.changelogs[-1].description if self.changelogs else None
         record["oppdatert_tid_kilde"] = self.last_modified
         record["gyldig_fom_tid_kilde"] = self.valid_from
