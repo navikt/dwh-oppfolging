@@ -1,6 +1,7 @@
 "datatypes used by kafka api"
 
 from typing import Final, Callable, Iterator, Any, Literal, get_args
+from enum import Enum
 import logging
 import struct
 from io import BytesIO
@@ -21,12 +22,17 @@ from dwh_oppfolging.transforms.functions import (
     string_to_sha256_hash, bytes_to_sha256_hash, json_to_string
 )
 
+class _LogicalOffset(Enum):
+    OFFSET_BEGINNING = OFFSET_BEGINNING
+    OFFSET_END = OFFSET_END
+    OFFSET_STORED = OFFSET_STORED
+    OFFSET_INVALID = OFFSET_INVALID
 
 Partition = int # >= 0
 Offset = int # >= 0
 Topic = str
 UnixEpoch = int
-_LogicalOffset = Literal[OFFSET_BEGINNING, OFFSET_END, OFFSET_STORED, OFFSET_INVALID] # type: ignore
+#_LogicalOffset = Literal[OFFSET_BEGINNING, OFFSET_END, OFFSET_STORED, OFFSET_INVALID]
 KafkaRecord = dict[str, str | int | None]
 SerializationType = Literal["confluent-json", "confluent-avro", "json", "str"]
 _Deserializer = Callable[[bytes], tuple[str, int] | tuple[str, None]]

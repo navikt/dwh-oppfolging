@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.1.4
+- etl_log() now makes a copy of previous bindvars and reset to that copy instead
+- fixed some typing issues in kafka api
+
 ### 0.1.3
 - upgraded confluent-kafka = 2.6.0
 
