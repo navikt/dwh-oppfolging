@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.1.3
+- upgraded confluent-kafka = 2.6.0
+
 ### 0.1.2
 - replaced all SSB API methods with: get_classification, get_classifcation_version, get_correspondence
 - upgraded google-cloud-bigquery = "3.26.0"
