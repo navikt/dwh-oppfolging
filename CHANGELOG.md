@@ -1,5 +1,8 @@
 # Changelog
 
+### 0.1.5
+- removed enable_etl_logging parameters and functionality  (etl_log function is kept as-is) 
+
 ### 0.1.4
 - etl_log() now makes a copy of previous bindvars and reset to that copy instead
 - fixed some typing issues in kafka api

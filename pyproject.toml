@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dwh-oppfolging"
-version = "0.1.4"
+version = "0.1.5"
 description = "Oppfolging python package for DWH ETL"
 authors = ["Team Oppfølging"]
 packages = [{include = "dwh_oppfolging"}]
@@ -16,10 +16,10 @@ ijson = "3.3.0"
 oracledb = "2.3.0"      # versjonen her begrenses av dbt-oracle, så dbt-oracle må oppgraderes først
 dbt-oracle = "1.8.1"    # denne krever cx_Oracle 8.3, som vi ikke klarer å bygge uten gcc
                         # 3.11-slim har ikke gcc, men 3.11 har det, men den er +700 MB..
-google-cloud-secret-manager = "2.20.2"
-confluent-kafka = "2.6.0"
+google-cloud-secret-manager = "2.21.1"
+confluent-kafka = "2.6.1"
 fastavro = "1.9.7"
-google-cloud-bigquery = "3.26.0"
+google-cloud-bigquery = "3.27.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "*"

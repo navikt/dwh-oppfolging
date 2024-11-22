@@ -91,6 +91,7 @@ def log_etl(
     elif isinstance(bindvars_copy, dict):
         cur.setinputsizes(**bindvars_copy)
 
+
 def get_table_row_count(cur: Cursor, schema: str, table: str) -> int:
     """
     returns number of rows in table
@@ -187,7 +188,6 @@ def update_table_from_sql(
     update_sql: str,
     bind_today_to_etl_date: bool = True,
     etl_date_bind_name: str = "etl_date",
-    enable_etl_logging: bool = True,
 ) -> tuple[int, int]:
     """
     basic update of table using provided sql
@@ -210,8 +210,6 @@ def update_table_from_sql(
     logging.info(f"inserted {rows_inserted} new rows")
     logging.info(f"updated {rows_updated} existing rows")
     logging.info(f"deleted {rows_deleted} rows")
-    if enable_etl_logging:
-        log_etl(cur, schema, table, today, rows_inserted, rows_updated, rows_deleted)
     return rows_inserted, rows_updated
 
 
@@ -265,7 +263,6 @@ def _insert_to_table_gen(
     data: BatchedRow | GeneratedRow | BatchedBatchedRow | GeneratedBatchedRow | Row,
     unique_columns: list[str] | None = None,
     additional_where_clauses: list[str] | None = None,
-    enable_etl_logging: bool = False,
     continue_on_db_errors: bool = False
 ):
     # coerce Row case to BatchedBatchedrow
@@ -305,8 +302,7 @@ def _insert_to_table_gen(
         batcherrors = cur.getbatcherrors() or []
         rows_inserted += cur.rowcount
         yield (cur.rowcount, batcherrors)
-    if enable_etl_logging:
-        log_etl(cur, schema, table, datetime.today(), rows_inserted)
+
 
 
 def insert_to_table(
@@ -316,7 +312,6 @@ def insert_to_table(
     data: BatchedRow | GeneratedRow | BatchedBatchedRow | GeneratedBatchedRow | Row,
     unique_columns: list[str] | None = None,
     additional_where_clauses: list[str] | None = None,
-    enable_etl_logging: bool = True,
 ):
     """
     Inserts data into table. No commits are made.
@@ -325,9 +320,6 @@ def insert_to_table(
 
     `unique_columns`: if provided, this combination of columns must be unique for 
     each row to be inserted, or it is skipped. Default: None
-
-    `enable_etl_logging`: if set, metadata will be inserted into the etl logging table
-    at the end of data insertion. Default: True
     """
     rows_inserted = 0
     for info in _insert_to_table_gen(
@@ -336,7 +328,6 @@ def insert_to_table(
         table, data,
         unique_columns,
         additional_where_clauses,
-        enable_etl_logging
     ):
         rows_inserted += info[0]
     return rows_inserted
@@ -349,7 +340,6 @@ def create_table_insert_generator(
     data: BatchedRow | GeneratedRow | BatchedBatchedRow | GeneratedBatchedRow | Row,
     unique_columns: list[str] | None = None,
     additional_where_clauses: list[str] | None = None,
-    enable_etl_logging: bool = True,
     continue_on_db_errors: bool = False,
 ):
     """
@@ -365,9 +355,6 @@ def create_table_insert_generator(
     `unique_columns`: if provided, this combination of columns must be unique for 
     each row to be inserted, or it is skipped. Default: None
 
-    `enable_etl_logging`: if set, metadata will be inserted into the etl logging table
-    at the end of data insertion. Default: True
-
     `continue_on_db_errors`: if set, then ORA errors are yielded at each batch and insertion
     is allowed to continue, rather than throwing an exception. Otherwise, only array dml
     counts are returned. Default: False
@@ -381,7 +368,6 @@ def create_table_insert_generator(
         data,
         unique_columns,
         additional_where_clauses,
-        enable_etl_logging,
         continue_on_db_errors
     ):
         yield info

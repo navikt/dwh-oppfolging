@@ -289,7 +289,18 @@ class KafkaConnection:
 
     def get_start_and_end_offsets(self, topic: Topic, partition: Partition) -> tuple[Offset, Offset] | None:
         """return tuples of start and end offsets for topic and partition
-        note: this creates a temporary consumer to read them"""
+        note: this creates a temporary consumer to read them
+
+        returns:
+            (int, int), a tuple with low and high watermark offset respectively
+            
+            The high watermark offset is the offset of the latest message in
+            the topic/partition available for consumption + 1.
+            
+            The low watermark  is the offset of the earliest message in the topic/partition.
+            If no messages have been written to the topic, it is 0.
+            It will also be 0 if only one message has been written to the partition (with offset 0).
+        """
         consumer_client = ConsumerClient(self._consumer_config)
         lo_hi_or_none: tuple[Offset, Offset] | None = consumer_client.get_watermark_offsets(TopicPartition(topic, partition), timeout=10)
         consumer_client.close()
