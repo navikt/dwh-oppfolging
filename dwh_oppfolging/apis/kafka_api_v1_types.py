@@ -261,6 +261,7 @@ class KafkaConnection:
     def get_confluent_registry_schema_from_id(self, schema_id: int) -> Schema:
         """returns the fastavro parsed schema from the global registry id"""
         schema = self._schema_registry_client.get_schema(schema_id)
+        assert schema.schema_str is not None, "Unable to parse schema"
         parsed_schema = fastavro.parse_schema(string_to_json(schema.schema_str))
         return parsed_schema
 
@@ -275,6 +276,7 @@ class KafkaConnection:
                 versions: list[int] = self._schema_registry_client.get_versions(subject)
                 for version in versions:
                     version_info = self._schema_registry_client.get_version(subject, version)
+                    assert version_info.schema_id is not None, "Unable to determine schema version"
                     schema_id: int = version_info.schema_id
                     parsed_schema = self.get_confluent_registry_schema_from_id(schema_id)
                     schema_lkp[schema_id] = parsed_schema
