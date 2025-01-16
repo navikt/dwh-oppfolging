@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.1.6
+- upgraded oracledb = "2.5.1", dbt-oracle = "1.8.4", google-cloud-secret-manager = "2.22.0", confluent-kafka = "2.8.0", fastavro = "1.10.0"
+- added KAFKA_VALUE_RAW containing message.value() before deserialization
+
 ### 0.1.5
 - removed enable_etl_logging parameters and functionality  (etl_log function is kept as-is) 
 

@@ -33,7 +33,7 @@ Offset = int # >= 0
 Topic = str
 UnixEpoch = int
 #_LogicalOffset = Literal[OFFSET_BEGINNING, OFFSET_END, OFFSET_STORED, OFFSET_INVALID]
-KafkaRecord = dict[str, str | int | None]
+KafkaRecord = dict[str, str | int | None | bytes]
 SerializationType = Literal["confluent-json", "confluent-avro", "json", "str"]
 _Deserializer = Callable[[bytes], tuple[str, int] | tuple[str, None]]
 _BytesHasher = Callable[[bytes], str]
@@ -254,7 +254,8 @@ class KafkaConnection:
             "KAFKA_PARTITION": partition,
             "KAFKA_TIMESTAMP": timestamp_value,
             "KAFKA_TIMESTAMP_TYPE": timestamp_desc,
-            "KAFKA_HEADERS": headers
+            "KAFKA_HEADERS": headers,
+            "KAFKA_VALUE_RAW": value
         }
 
     # public methods
