@@ -22,6 +22,7 @@ def batch_it(it: Iterable, n: int) -> Iterable:
     yields:
         list (or tuple) of iterator's output, of at most size n
 
+    example:
     >>> list(batch_it(range(4), n=3))
     [[0, 1, 2], [3]]
     """
@@ -55,11 +56,13 @@ def find_in_dict(mapping: Mapping, path: list, raise_on_missing: bool = False) -
         - KeyError
         - possibly other errors if nested value is not a mapping
 
+    examples:
     >>> find_in_dict({0: {1: 2}}, [0, 1])
     2
-    >>> try: find_in_dict({}, [0, 1, 2], True)
-    ... except KeyError as exc: exc.args[0]
-    0
+    >>> find_in_dict({}, [0, 1, 2], True)
+    Traceback (most recent call last):
+        ...
+    KeyError: 0
     """
     if raise_on_missing:
         return reduce(lambda d,k: d[k], path, mapping)
@@ -75,6 +78,8 @@ def flatten_dict(mapping: Mapping, sep: str = "_", flatten_lists: bool = False) 
     recursively flattens dict with specified separator
     optionally flatten lists in it as well
     note: all keys become strings
+
+    example:
     >>> flatten_dict({0: {1: 3}, 'z': [1, 2, 3]}, "_", True)
     {'0_1': 3, 'z_0': 1, 'z_1': 2, 'z_2': 3}
     """
@@ -148,6 +153,8 @@ def string_to_naive_utc0_datetime(
     Parses string to pendulum datetime, then converts to UTC timezone
     (adjusting and adding utc offset, then appending tzinfo) and finally strips the timezone.
     Converts string to naive pendulum datetime, stripping any timezone info
+
+    examples:
     >>> string_to_naive_utc0_datetime("2022-05-05T05:05:05+01:00").isoformat()
     '2022-05-05T04:05:05'
     >>> string_to_naive_utc0_datetime("2022-05-05").isoformat()
@@ -170,9 +177,13 @@ def epoch_to_naive_utc0_datetime(
     When converting from milliseconds, divide by 1000 first.
 
     example: forgetting to divide by 1000
-    >>> try: epoch_to_naive_utc0_datetime(1706000773111)
-    ... except ValueError as exc: exc.args[0]
-    'year 56031 is out of range'
+    >>> import sys, pytest
+    >>> if sys.platform.startswith('win'):
+    ...     pytest.skip("windows unsupported")
+    >>> epoch_to_naive_utc0_datetime(1706000773111)
+    Traceback (most recent call last):
+        ...
+    ValueError: year 56031 is out of range
 
     example: remembering to do it
     >>> epoch_to_naive_utc0_datetime(1706000773111 / 1000).isoformat()
@@ -186,6 +197,8 @@ def epoch_to_naive_utc0_datetime(
 
 def datetime_to_naive_norwegian_datetime(dt: datetime) -> datetime:
     """converts datetime to naive norwegian datetime
+
+    example:
     >>> datetime_to_naive_norwegian_datetime(datetime.fromisoformat("2022-05-05T05:05:05+01:00")).isoformat()
     '2022-05-05T06:05:05'
     """
@@ -194,6 +207,8 @@ def datetime_to_naive_norwegian_datetime(dt: datetime) -> datetime:
 
 def naive_norwegian_datetime_to_naive_utc0_datetime(dt: datetime) -> datetime:
     """converts a naive norwegian datetime to a naive utc0 datetime
+
+    example:
     >>> naive_norwegian_datetime_to_naive_utc0_datetime(datetime.fromisoformat("2023-08-29T21:16:48")).isoformat()
     '2023-08-29T19:16:48'
     """
@@ -205,6 +220,8 @@ def naive_norwegian_datetime_to_naive_utc0_datetime(dt: datetime) -> datetime:
 
 def string_to_code(string: str) -> str:
     """converts a string to a code string conforming to dwh standard
+
+    examples:
     >>> string_to_code("/&$  ØrkEn Rotte# *;-")
     'ORKEN_ROTTE'
     >>> string_to_code(" ??? ")
@@ -225,6 +242,8 @@ def string_to_code(string: str) -> str:
 
 def string_to_json(string: str) -> Any:
     """returns json object from string
+
+    example:
     >>> string_to_json('{"x": 1}')
     {'x': 1}
     """
@@ -233,6 +252,8 @@ def string_to_json(string: str) -> Any:
 
 def json_to_string(data: Any) -> str:
     """returns json-serialized object (string)
+
+    example:
     >>> json_to_string({"x": 1})
     '{"x": 1}'
     """
@@ -241,6 +262,8 @@ def json_to_string(data: Any) -> str:
 
 def bytes_to_string(data: bytes) -> str:
     """returns the utf-8 decoded string
+
+    example:
     >>> bytes_to_string(b'hello world')
     'hello world'
     """
@@ -250,6 +273,8 @@ def bytes_to_string(data: bytes) -> str:
 
 def string_to_bytes(string: str) -> bytes:
     """returns the utf-8 encoded string as bytes
+
+    example:
     >>> string_to_bytes('Hello, world!')
     b'Hello, world!'
     """
@@ -259,6 +284,8 @@ def string_to_bytes(string: str) -> bytes:
 
 def json_bytes_to_string(data: bytes) -> str:
     """Returns json serialized object (string)
+
+    example:
     >>> json_bytes_to_string(b'{"x": 35}')
     '{"x": 35}'
     """
@@ -268,6 +295,8 @@ def json_bytes_to_string(data: bytes) -> str:
 
 def bytes_to_sha256_hash(data: bytes) -> str:
     """Returns the sha256 hash of the bytes as a hex-numerical string
+
+    example:
     >>> bytes_to_sha256_hash(b'Hello, world!')
     '315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3'
     """
@@ -277,6 +306,8 @@ def bytes_to_sha256_hash(data: bytes) -> str:
 
 def string_to_sha256_hash(string: str) -> str:
     """Returns the sha256 hash of the utf-8 encoded string as a hex-numerical string
+
+    example:
     >>> string_to_sha256_hash("Hello, world!")
     '315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3'
     """

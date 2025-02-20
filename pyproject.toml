@@ -47,7 +47,7 @@ build-backend = "poetry.core.masonry.api"
 # aliasing = "explicit"
 
 [tool.pytest.ini_options]
-addopts = "--doctest-modules --ignore=examples"
+addopts = "--doctest-modules --ignore=examples --ignore=tests"
 
 [tool.mypy]
 files = "dwh_oppfolging"
