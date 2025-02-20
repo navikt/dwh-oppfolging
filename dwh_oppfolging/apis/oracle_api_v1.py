@@ -68,30 +68,6 @@ def create_oracle_connection(schema: str, as_proxy: bool = False) -> Connection:
     return con
 
 
-def log_etl(
-    cur: Cursor,
-    schema: str,
-    table: str,
-    etl_date: datetime,
-    rows_inserted: int | None = None,
-    rows_updated: int | None = None,
-    rows_deleted: int | None= None,
-    log_text: str| None = None,
-) -> None:
-    """
-    inserts into logging table, does not commit
-    """
-    bindvars_copy: list|dict|None = cur.bindvars.copy() if cur.bindvars else None
-    sql = f"insert into {schema}.etl_logg select :1,:2,:3,:4,:5,:6 from dual"
-    cur.setinputsizes(None) # reset inputsizes to avoid DPY-2006 and DPY-4008
-    cur.execute(sql, [table, etl_date, rows_inserted, rows_updated, rows_deleted, log_text])
-    logging.info(f"logged etl for {table}")
-    if isinstance(bindvars_copy, list):
-        cur.setinputsizes(*bindvars_copy)
-    elif isinstance(bindvars_copy, dict):
-        cur.setinputsizes(**bindvars_copy)
-
-
 def get_table_row_count(cur: Cursor, schema: str, table: str) -> int:
     """
     returns number of rows in table

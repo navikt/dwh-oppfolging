@@ -1,6 +1,7 @@
 # Changelog
 
 ### 0.1.7
+- removed log_etl()
 - yield only non-empty batches from kafka
 - added CodeChangeItem
 - upgraded dbt-oracle = "1.9.0", google-cloud-bigquery = "3.29.0", google-cloud-secret-manager = "2.22.1"
