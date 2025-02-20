@@ -462,8 +462,9 @@ class KafkaConnection:
                             assignment_count -= 1
                             if assignment_count <= 0:
                                 logging.info("reached end of all partitions")
-                                yield batch
-                                batch = []
+                                if len(batch) > 0:
+                                    yield batch
+                                    batch = []
 
                         # Local: No offset to automatically reset to
                         # In python confluent-kafka lib this may happen when we give an

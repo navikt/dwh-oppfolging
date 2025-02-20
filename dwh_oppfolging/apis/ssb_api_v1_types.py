@@ -36,13 +36,13 @@ class Level(TypedDict):
 
 class ChangelogItem(NamedTuple):
     """ChangelogItem in SSB API"""
-    changeOccured: datetime 
+    change_occurred: datetime 
     description: str
     @classmethod
     def from_json(cls, data: dict) -> Self:
         """Constructs ChangelogItem from an entry in the json-version's changelogs"""
-        change_occured = string_to_naive_norwegian_datetime(data["changeOccured"])
-        return cls(change_occured, data["description"])
+        change_occurred = string_to_naive_norwegian_datetime(data["changeOccured"])
+        return cls(change_occurred, data["description"])
 
 
 class CorrespondenceHeader(NamedTuple):
@@ -290,3 +290,44 @@ class Version(NamedTuple):
         record["lastet_dato"] = download_date
         record["kildesystem"] = api_name
         return record
+
+class CodeChangeItem(NamedTuple):
+    """Classification Changes Model Item /changes/*"""
+    old_code: str
+    old_name: str|None
+    old_short_name: str|None
+    old_notes: str|None
+    new_code: str|None
+    new_name: str|None
+    new_short_name: str|None
+    new_notes: str|None
+    change_occurred: datetime
+
+    @classmethod
+    def from_json(cls, data: dict):
+        return cls(
+            data["oldCode"], data["oldName"], data.get("oldShortName"), data.get("oldNotes"),
+            data["newCode"], data["newName"], data.get("newShortName"), data.get("newNotes"),
+            # trunc change occurred, these are in form yyyy-mm-dd, and should not have time of day
+            datetime.strptime(data["changeOccurred"], _VALID_DATE_FMT)
+        )
+
+    def to_record(self, api_version: int, api_name: str, download_date: datetime):
+        #record = {k: getattr(self, k) for k in self._fields}
+        #record |= 
+        raise NotImplementedError
+
+class CodeChangeList(NamedTuple):
+    """Classification Changes Model /changes/*"""
+    code_change_list: list[CodeChangeItem]
+    classification_id: int
+
+    @classmethod
+    def from_json(cls, data: dict, classification_id: int):
+        return cls(
+            [CodeChangeItem.from_json(item) for item in data["codeChanges"]],
+            classification_id
+        )
+    
+    def to_record(self, api_version: int, api_name: str, download_date: datetime):
+        raise NotImplementedError

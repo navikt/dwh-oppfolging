@@ -1,5 +1,10 @@
 # Changelog
 
+### 0.1.7
+- yield only non-empty batches from kafka
+- added CodeChangeItem
+- upgraded dbt-oracle = "1.9.0", google-cloud-bigquery = "3.29.0", google-cloud-secret-manager = "2.22.1"
+
 ### 0.1.6
 - upgraded oracledb = "2.5.1", dbt-oracle = "1.8.4", google-cloud-secret-manager = "2.22.0", confluent-kafka = "2.8.0", fastavro = "1.10.0"
 - added KAFKA_VALUE_RAW containing message.value() before deserialization
