@@ -508,6 +508,7 @@ class KafkaConnection:
                     batch = []
                 raise exc
 
+        consumer_client.close()
         logging.info(f"Completed with {non_empty_counter} messages consumed")
         if empty_counter > 0:
             logging.warning(f"found {empty_counter} empty messages")
