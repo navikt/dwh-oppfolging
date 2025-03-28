@@ -13,7 +13,7 @@ jobs:
           persist-credentials: false
       - uses: actions/setup-python@v5
         with:
-          python-version: 3.11
+          python-version: 3.12
       - run: pip install --user poetry
       - run: poetry build
       - name: Publish package distributions to PyPI
