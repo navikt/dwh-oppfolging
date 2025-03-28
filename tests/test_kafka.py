@@ -160,5 +160,5 @@ def test_read_batched_messages_from_topic():
                     assert r3["KAFKA_VALUE"] == '{"x": 103, "y": "!", "z": "1970-01-04"}'
 
 
-#if __name__ == "__main__":
-#    test_read_batched_messages_from_topic()
+if __name__ == "__main__":
+    test_read_batched_messages_from_topic()
