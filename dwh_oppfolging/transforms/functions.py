@@ -138,7 +138,18 @@ def string_to_naive_norwegian_datetime(
     example: specifying the optional format
     >>> string_to_naive_norwegian_datetime("Mon Jan 22 04:21:09 CET 2024", "ddd MMM DD HH:mm:ss z YYYY").isoformat()
     '2024-01-22T04:21:09'
+
+    example: pendulum doesnt support CEST
+    >>> string_to_naive_norwegian_datetime("Mon Mar 31 04:27:05 CEST 2025", "ddd MMM DD HH:mm:ss z YYYY").isoformat()
+    Traceback (most recent call last):
+        ...
+    ValueError: Invalid date
+
+    example: ...but will treat CET (UTC+1) as CEST (UTC+2) if DST is active
+    >>> string_to_naive_norwegian_datetime("Mon Mar 31 04:27:05 CET 2025", "ddd MMM DD HH:mm:ss z YYYY").isoformat()
+    '2025-03-31T04:27:05'
     """
+    # dateutil.parser.parse
     pdl_dt = pendulum.parser.parse(string) if not fmt else pendulum.from_format(string, fmt)
     assert isinstance(pdl_dt, PendulumDateTime)
     pdl_dt = pdl_dt.in_timezone("Europe/Oslo")
