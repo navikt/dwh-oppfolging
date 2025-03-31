@@ -139,8 +139,8 @@ def string_to_naive_norwegian_datetime(
     >>> string_to_naive_norwegian_datetime("Mon Jan 22 04:21:09 CET 2024", "ddd MMM DD HH:mm:ss z YYYY").isoformat()
     '2024-01-22T04:21:09'
 
-    example: pendulum doesnt support CEST
-    >>> string_to_naive_norwegian_datetime("Mon Mar 31 04:27:05 CEST 2025", "ddd MMM DD HH:mm:ss z YYYY").isoformat()
+    example: the underlying implementation, pendulum, doesnt support CEST
+    >>> pendulum.from_format("Mon Mar 31 04:27:05 CEST 2025", "ddd MMM DD HH:mm:ss z YYYY")
     Traceback (most recent call last):
         ...
     ValueError: Invalid date
@@ -148,10 +148,18 @@ def string_to_naive_norwegian_datetime(
     ...but will treat CET (UTC+1) as CEST (UTC+2) if DST is active, so it can be replaced
     >>> pendulum.from_format("Mon Mar 31 04:27:05 CET 2025", "ddd MMM DD HH:mm:ss z YYYY").is_dst()
     True
+
     >>> pendulum.from_format("Mon Mar 30 04:27:05 CET 2025", "ddd MMM DD HH:mm:ss z YYYY").is_dst()
     False
+
+    ...so the function replaces CEST with CET
+    >>> cest, cet = "Mon Mar 30 04:27:05 CEST 2025", "Mon Mar 30 04:27:05 CET 2025"
+    >>> fmt = "ddd MMM DD HH:mm:ss z YYYY"
+    >>> string_to_naive_norwegian_datetime(cest, fmt) == string_to_naive_norwegian_datetime(cet, fmt)
+    True
     """
     # TODO consider switching to dateutil.parser.parse to handle CEST and such.
+    string = string.replace("CEST", "CET")
     pdl_dt = pendulum.parser.parse(string) if not fmt else pendulum.from_format(string, fmt)
     assert isinstance(pdl_dt, PendulumDateTime)
     pdl_dt = pdl_dt.in_timezone("Europe/Oslo")
