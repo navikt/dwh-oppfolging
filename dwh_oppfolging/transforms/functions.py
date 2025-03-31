@@ -149,7 +149,7 @@ def string_to_naive_norwegian_datetime(
     >>> string_to_naive_norwegian_datetime("Mon Mar 31 04:27:05 CET 2025", "ddd MMM DD HH:mm:ss z YYYY").isoformat()
     '2025-03-31T04:27:05'
     """
-    # dateutil.parser.parse
+    # TODO consider switching to dateutil.parser.parse to handle CEST and such.
     pdl_dt = pendulum.parser.parse(string) if not fmt else pendulum.from_format(string, fmt)
     assert isinstance(pdl_dt, PendulumDateTime)
     pdl_dt = pdl_dt.in_timezone("Europe/Oslo")
