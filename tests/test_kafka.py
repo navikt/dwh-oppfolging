@@ -98,7 +98,7 @@ def test_read_batched_messages_from_topic():
                 }
                 schema_id = con._schema_registry_client.register_schema(
                     "MyTestopic-MySchema"
-                    , Schema(str(avro_schema).replace("'", '"'))
+                    , Schema(schema_str=str(avro_schema).replace("'", '"'))
                 )
                 
                 # serialize messages according to this schema

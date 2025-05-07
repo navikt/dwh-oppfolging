@@ -153,7 +153,7 @@ class KafkaConnection:
                 schema = self.get_confluent_registry_schema_from_id(schema_id)
                 self._cached_confluent_schemas[schema_id] = schema
             with BytesIO(value[_CONFLUENT_HEADER_SIZE:]) as fo:
-                record = fastavro.schemaless_reader(fo, schema)
+                record = fastavro.schemaless_reader(fo, schema) # type: ignore
             deserialized_value = json_to_string(record)
             return deserialized_value, schema_id
         except Exception as exc:

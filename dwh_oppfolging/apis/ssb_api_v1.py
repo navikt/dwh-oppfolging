@@ -105,4 +105,4 @@ def get_classification_changes(classification_id: int):
             continue
         data = response.json()
         return CodeChangeList.from_json(data, classification_id)
-    return []
+    return CodeChangeList([], classification_id)
