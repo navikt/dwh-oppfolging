@@ -7,7 +7,7 @@ from dwh_oppfolging.apis.ssb_api_v1_types import (
     Version, VersionHeader,
     Correspondence, CorrespondenceHeader,
     Classification,
-    CodeChangeList
+    CodeChangeItem,
 )
 
 API_VERSION = 1
@@ -85,7 +85,7 @@ def get_correspondence(source_classification_id: int, target_classification_id: 
     return Correspondence.from_json(data, source_classification_id, target_classification_id)
 
 
-def get_classification_changes(classification_id: int):
+def get_classification_code_changes(classification_id: int):
     """
     Makes a get request to SSB Klass API and builds CodeChangeList from the JSON response.
     
@@ -94,9 +94,11 @@ def get_classification_changes(classification_id: int):
     url = _BASE_URL + f"/classifications/{classification_id}/changes"
 
     classification = get_classification(classification_id)
-    version_dates = sorted((v.valid_from for v in classification.versions))
-    for from_date in version_dates:
-        params = {"from": from_date.date().isoformat()}
+    versions_sorted_asc = sorted((version for version in classification.versions), key=lambda x: x.valid_from)
+    version_lkp = {version.valid_from: version.version_id for version in classification.versions}
+    changes = []
+    for version in versions_sorted_asc[:-1]: # skip end: the latest version cannot have changes to a later version...
+        params = {"from": version.valid_from.date().isoformat()}
         response = requests.get(url, headers=_HEADERS, params=params, timeout=10)
         try:
             response.raise_for_status()
@@ -104,5 +106,8 @@ def get_classification_changes(classification_id: int):
             logging.warning(response.text)
             continue
         data = response.json()
-        return CodeChangeList.from_json(data, classification_id)
-    return CodeChangeList([], classification_id)
+        changes.extend(
+            CodeChangeItem.from_json(item, classification_id, version.version_id, version_lkp)
+            for item in data["codeChanges"]
+        )
+    return changes

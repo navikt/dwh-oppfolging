@@ -294,40 +294,44 @@ class Version(NamedTuple):
 class CodeChangeItem(NamedTuple):
     """Classification Changes Model Item /changes/*"""
     old_code: str
+    """code in old version"""
     old_name: str|None
+    """name in old version"""
     old_short_name: str|None
+    """short name in old version or None if missing"""
     old_notes: str|None
+    """notes in old version or None if missing"""
     new_code: str|None
+    """code in new version"""
     new_name: str|None
+    """name in new version"""
     new_short_name: str|None
+    """short name in new version or None if missing"""
     new_notes: str|None
+    """notes in new version or None if missing"""
     change_occurred: datetime
+    """when the change from old to new occured"""
+    old_version: int
+    """old version id, inferred from parameter in changes query (not returned by SSB API)"""
+    new_version: int
+    """new version id, inferred from change_occurred (not returned by SSB API)"""
+    classification_id: int
+    """the classification the code change occurred in (not returned by SSB API)"""
 
     @classmethod
-    def from_json(cls, data: dict):
+    def from_json(cls, data: dict, classification_id: int, old_version: int, version_lkp: dict[datetime, int]):
+        change_occured = datetime.strptime(data["changeOccurred"], _VALID_DATE_FMT)
         return cls(
             data["oldCode"], data["oldName"], data.get("oldShortName"), data.get("oldNotes"),
             data["newCode"], data["newName"], data.get("newShortName"), data.get("newNotes"),
             # trunc change occurred, these are in form yyyy-mm-dd, and should not have time of day
-            datetime.strptime(data["changeOccurred"], _VALID_DATE_FMT)
+            change_occured,
+            old_version,
+            version_lkp[change_occured],
+            classification_id
         )
 
     def to_record(self, api_version: int, api_name: str, download_date: datetime):
         #record = {k: getattr(self, k) for k in self._fields}
         #record |= 
-        raise NotImplementedError
-
-class CodeChangeList(NamedTuple):
-    """Classification Changes Model /changes/*"""
-    code_change_list: list[CodeChangeItem]
-    classification_id: int
-
-    @classmethod
-    def from_json(cls, data: dict, classification_id: int):
-        return cls(
-            [CodeChangeItem.from_json(item) for item in data["codeChanges"]],
-            classification_id
-        )
-    
-    def to_record(self, api_version: int, api_name: str, download_date: datetime):
         raise NotImplementedError
