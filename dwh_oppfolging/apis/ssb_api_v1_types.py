@@ -301,7 +301,7 @@ class CodeChangeItem(NamedTuple):
     """short name in old version or None if missing"""
     old_notes: str|None
     """notes in old version or None if missing"""
-    new_code: str|None
+    new_code: str
     """code in new version"""
     new_name: str|None
     """name in new version"""
@@ -332,6 +332,21 @@ class CodeChangeItem(NamedTuple):
         )
 
     def to_record(self, api_version: int, api_name: str, download_date: datetime):
-        #record = {k: getattr(self, k) for k in self._fields}
-        #record |= 
-        raise NotImplementedError
+        record: dict = {}
+        record["klassifikasjon_kode"] = str(self.classification_id)
+        record["fra_kode"] = self.old_code
+        record["til_kode"] = self.new_code
+        record["fra_versjon_kode"] = str(self.old_version)
+        record["til_version_kode"] = str(self.new_version)
+        record["oppdatert_tid_kilde"] = self.change_occurred
+        record["sha256_hash"] = string_to_sha256_hash(
+            record["klassifikasjon_kode"] +
+            record["fra_kode"] +
+            record["til_kode"] +
+            record["fra_versjon_kode"] +
+            record["til_version_kode"]
+        )
+        record["api_versjon"] = api_version
+        record["lastet_dato"] = download_date
+        record["kildesystem"] = api_name
+        return record
