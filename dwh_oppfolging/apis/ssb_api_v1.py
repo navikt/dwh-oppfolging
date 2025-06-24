@@ -87,7 +87,7 @@ def get_correspondence(source_classification_id: int, target_classification_id: 
 
 def get_classification_code_changes(classification_id: int):
     """
-    Makes a get request to SSB Klass API and builds CodeChangeList from the JSON response.
+    Makes a get request to SSB Klass API and builds list of CodeChangeItem from the JSON response.
     
     Note: if there is no change table available then inter-version changes may have been lost
     """
@@ -96,7 +96,7 @@ def get_classification_code_changes(classification_id: int):
     classification = get_classification(classification_id)
     versions_sorted_asc = sorted((version for version in classification.versions), key=lambda x: x.valid_from)
     version_lkp = {version.valid_from: version.version_id for version in classification.versions}
-    changes = []
+    changes: list[CodeChangeItem] = []
     for version in versions_sorted_asc[:-1]: # skip end: the latest version cannot have changes to a later version...
         params = {"from": version.valid_from.date().isoformat()}
         response = requests.get(url, headers=_HEADERS, params=params, timeout=10)

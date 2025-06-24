@@ -293,7 +293,7 @@ class Version(NamedTuple):
 
 class CodeChangeItem(NamedTuple):
     """Classification Changes Model Item /changes/*"""
-    old_code: str
+    old_code: str|None
     """code in old version"""
     old_name: str|None
     """name in old version"""
@@ -301,8 +301,8 @@ class CodeChangeItem(NamedTuple):
     """short name in old version or None if missing"""
     old_notes: str|None
     """notes in old version or None if missing"""
-    new_code: str
-    """code in new version"""
+    new_code: str|None
+    """code in new version or None if code was deleted"""
     new_name: str|None
     """name in new version"""
     new_short_name: str|None
@@ -337,14 +337,14 @@ class CodeChangeItem(NamedTuple):
         record["fra_kode"] = self.old_code
         record["til_kode"] = self.new_code
         record["fra_versjon_kode"] = str(self.old_version)
-        record["til_version_kode"] = str(self.new_version)
+        record["til_versjon_kode"] = str(self.new_version)
         record["oppdatert_tid_kilde"] = self.change_occurred
         record["sha256_hash"] = string_to_sha256_hash(
             record["klassifikasjon_kode"] +
-            record["fra_kode"] +
-            record["til_kode"] +
+            (record["fra_kode"] or "") +
+            (record["til_kode"] or "") +
             record["fra_versjon_kode"] +
-            record["til_version_kode"]
+            record["til_versjon_kode"]
         )
         record["api_versjon"] = api_version
         record["lastet_dato"] = download_date
