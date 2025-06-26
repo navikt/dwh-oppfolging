@@ -311,8 +311,8 @@ class CodeChangeItem(NamedTuple):
     """notes in new version or None if missing"""
     change_occurred: datetime
     """when the change from old to new occured"""
-    old_version: int
-    """old version id, inferred from parameter in changes query (not returned by SSB API)"""
+    old_version: int|None
+    """old version id, inferred from parameter in changes query (not returned by SSB API) or None if new code"""
     new_version: int
     """new version id, inferred from change_occurred (not returned by SSB API)"""
     classification_id: int
@@ -326,7 +326,7 @@ class CodeChangeItem(NamedTuple):
             data["newCode"], data["newName"], data.get("newShortName"), data.get("newNotes"),
             # trunc change occurred, these are in form yyyy-mm-dd, and should not have time of day
             change_occured,
-            old_version,
+            old_version if data["oldCode"] is not None else None, # force None if new code
             version_lkp[change_occured],
             classification_id
         )

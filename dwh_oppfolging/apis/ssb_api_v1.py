@@ -1,7 +1,7 @@
 "ssb api"
 
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 import requests # type: ignore
 from dwh_oppfolging.apis.ssb_api_v1_types import (
     Version, VersionHeader,
@@ -97,8 +97,13 @@ def get_classification_code_changes(classification_id: int):
     versions_sorted_asc = sorted((version for version in classification.versions), key=lambda x: x.valid_from)
     version_lkp = {version.valid_from: version.version_id for version in classification.versions}
     changes: list[CodeChangeItem] = []
-    for version in versions_sorted_asc[:-1]: # skip end: the latest version cannot have changes to a later version...
-        params = {"from": version.valid_from.date().isoformat()}
+    for idx, version in enumerate(versions_sorted_asc[:-1]): # skip end: the latest version cannot have changes to a later version...
+        params = {
+            "from": version.valid_from.date().isoformat(),
+            # add a single day here because if to = next version's valid_from then for some reason nothing is returned
+            # also, adding a to parameter gets rid of new code duplicates which otherwise appear in every older version
+            "to": (versions_sorted_asc[idx + 1].valid_from.date() + timedelta(days=1)).isoformat()
+        }
         response = requests.get(url, headers=_HEADERS, params=params, timeout=10)
         try:
             response.raise_for_status()
