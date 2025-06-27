@@ -1,7 +1,7 @@
 # Changelog
 
 ### 0.1.8
-- redid CodeChangeItem and added get_classification_code_changes()
+- redid CodeChangeItem and added get_changes_between_versions_in_classification() to fetch them
 - updated several packages:
     requests = "2.32.4", pendulum = "3.1.0", ijson = "3.4.0", oracledb = "3.1.1", dbt-oracle = "1.9.2",
     google-cloud-secret-manager = "2.24.0", confluent-kafka = "2.10.1", fastavro = "1.11.1",

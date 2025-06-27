@@ -154,9 +154,6 @@ class VersionHeader(NamedTuple):
         """Constructs VersionHeader from an entry in the json-classification's versions list"""
         url: str = data["_links"]["self"]["href"].replace("http:", "https:", 1)
         version_id: int = int(url[url.rfind("/")+1:])
-        #valid_from = string_to_naive_norwegian_datetime(data["validFrom"])
-        #valid_to = string_to_naive_norwegian_datetime(data["validTo"]) if "validTo" in data else None
-        # trunc valid dates, these are in form yyyy-mm-dd, and should not have time of day
         valid_from = datetime.strptime(data["validFrom"], _VALID_DATE_FMT)
         valid_to = datetime.strptime(data["validTo"], _VALID_DATE_FMT) if "validTo" in data else None
         last_modified = string_to_naive_norwegian_datetime(data["lastModified"])
@@ -235,9 +232,6 @@ class Version(NamedTuple):
     def from_json(cls, data: dict, classification_id: int):
         """Constructs Version from json-version"""
         last_modified = string_to_naive_norwegian_datetime(data["lastModified"])
-        #valid_from = string_to_naive_norwegian_datetime(data["validFrom"])
-        #valid_to = string_to_naive_norwegian_datetime(data["validTo"]) if "validTo" in data else None
-        # trunc valid dates, these are in form yyyy-mm-dd, and should not have time of day
         valid_from = datetime.strptime(data["validFrom"], _VALID_DATE_FMT)
         valid_to = datetime.strptime(data["validTo"], _VALID_DATE_FMT) if "validTo" in data else None
         corr_tables = [CorrespondenceHeader.from_json(corr) for corr in data["correspondenceTables"]]
@@ -291,6 +285,7 @@ class Version(NamedTuple):
         record["kildesystem"] = api_name
         return record
 
+
 class CodeChangeItem(NamedTuple):
     """Classification Changes Model Item /changes/*"""
     old_code: str|None
@@ -317,18 +312,26 @@ class CodeChangeItem(NamedTuple):
     """new version id, inferred from change_occurred (not returned by SSB API)"""
     classification_id: int
     """the classification the code change occurred in (not returned by SSB API)"""
+    change_type: str
+    """one of: split, new, deleted, updated, moved (not returned by SSB API)"""
 
     @classmethod
-    def from_json(cls, data: dict, classification_id: int, old_version: int, version_lkp: dict[datetime, int]):
+    def from_json(cls, data: dict, classification_id: int, old_version: int, version_lkp: dict[datetime, int], count_lkp: dict[str, int]):
         change_occured = datetime.strptime(data["changeOccurred"], _VALID_DATE_FMT)
         return cls(
             data["oldCode"], data["oldName"], data.get("oldShortName"), data.get("oldNotes"),
             data["newCode"], data["newName"], data.get("newShortName"), data.get("newNotes"),
-            # trunc change occurred, these are in form yyyy-mm-dd, and should not have time of day
             change_occured,
             old_version if data["oldCode"] is not None else None, # force None if new code
             version_lkp[change_occured],
-            classification_id
+            classification_id,
+            (
+                "new" if data["oldCode"] is None
+                else "split" if count_lkp[data["oldCode"]] > 1
+                else "deleted" if data["newCode"] is None
+                else "updated" if data["oldCode"] == data["newCode"]
+                else "moved" # note: split takes precedence over moved
+            )
         )
 
     def to_record(self, api_version: int, api_name: str, download_date: datetime):

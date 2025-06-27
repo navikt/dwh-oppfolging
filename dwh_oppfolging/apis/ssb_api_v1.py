@@ -1,11 +1,12 @@
 "ssb api"
 
 import logging
-from datetime import datetime, timedelta
+from datetime import timedelta
 import requests # type: ignore
+from collections import defaultdict
 from dwh_oppfolging.apis.ssb_api_v1_types import (
-    Version, VersionHeader,
-    Correspondence, CorrespondenceHeader,
+    Version,
+    Correspondence,
     Classification,
     CodeChangeItem,
 )
@@ -19,9 +20,7 @@ YRKESKLASSIFISERING_ID = 7
 YRKESKATALOG_TO_YRKESKLASSIFISERING_ID = 426
 ORGANISASJONSFORM_ID = 35
 
-_BASE_URL = (
-    f"https://data.ssb.no/api/klass/v{API_VERSION}"  # classifications/{0}/changes"
-)
+_BASE_URL = f"https://data.ssb.no/api/klass/v{API_VERSION}"
 _HEADERS = {"Accept": "application/json;charset=UTF-8"}
 
 
@@ -85,11 +84,17 @@ def get_correspondence(source_classification_id: int, target_classification_id: 
     return Correspondence.from_json(data, source_classification_id, target_classification_id)
 
 
-def get_classification_code_changes(classification_id: int):
+def get_changes_between_versions_in_classification(classification_id: int):
     """
     Makes a get request to SSB Klass API and builds list of CodeChangeItem from the JSON response.
-    
-    Note: if there is no change table available then inter-version changes may have been lost
+
+    NB: if a change table is not available between successive versions
+        then nothing is returned for that period.
+
+    params:
+        - classification_id: int
+    returns:
+        list[CodeChangeItem]
     """
     url = _BASE_URL + f"/classifications/{classification_id}/changes"
 
@@ -111,8 +116,14 @@ def get_classification_code_changes(classification_id: int):
             logging.warning(response.text)
             continue
         data = response.json()
+
+        count_lkp: dict[str, int] = defaultdict(int) # we only count within the current verion
+        for item in data["codeChanges"]:
+            if item["oldCode"] is not None:
+                count_lkp[item["oldCode"]] += 1
+
         changes.extend(
-            CodeChangeItem.from_json(item, classification_id, version.version_id, version_lkp)
+            CodeChangeItem.from_json(item, classification_id, version.version_id, version_lkp, count_lkp)
             for item in data["codeChanges"]
         )
     return changes
