@@ -13,13 +13,13 @@ python = "3.12.*"       # python 3.12 mangler distutils, som ødelegger installa
 requests = "2.32.4"
 pendulum = "3.1.0"      # fjernet airflow/dataverk i dev fordi den bruker en eldgammel versjon av pendulum
 ijson = "3.4.0"
-oracledb = "3.1.1"      # versjonen her begrenses av dbt-oracle, så dbt-oracle må oppgraderes først
-dbt-oracle = "1.9.2"    # denne krever cx_Oracle 8.3, som vi ikke klarer å bygge uten gcc
+oracledb = "3.2.0"      # versjonen her begrenses av dbt-oracle, så dbt-oracle må oppgraderes først
+dbt-oracle = "1.9.3"    # denne krever cx_Oracle 8.3, som vi ikke klarer å bygge uten gcc
                         # 3.11-slim har ikke gcc, men 3.11 har det, men den er +700 MB..
 google-cloud-secret-manager = "2.24.0"
-confluent-kafka = { version = "2.10.1", extras = ["avro", "json", "schemaregistry"]} 
-fastavro = "1.11.1"
-google-cloud-bigquery = "3.34.0"
+confluent-kafka = { version = "2.11.0", extras = ["avro", "json", "schemaregistry"]} 
+fastavro = "1.12.0"
+google-cloud-bigquery = "3.35.1"
 
 [tool.poetry.group.dev.dependencies]
 black = "*"
