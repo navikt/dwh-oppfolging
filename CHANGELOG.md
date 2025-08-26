@@ -1,5 +1,10 @@
 # Changelog
 
+
+### 0.1.9
+- removed old brreg api
+- added plotly = "6.3.0"
+
 ### 0.1.8
 - redid CodeChangeItem and added get_changes_between_versions_in_classification() to fetch them
 - updated several packages:
