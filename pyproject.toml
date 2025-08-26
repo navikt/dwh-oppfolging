@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dwh-oppfolging"
-version = "0.1.9"
+version = "0.1.95"
 description = "Oppfolging python package for DWH ETL"
 authors = ["Team Oppfølging"]
 packages = [{include = "dwh_oppfolging"}]
@@ -21,7 +21,9 @@ confluent-kafka = { version = "2.11.0", extras = ["avro", "json", "schemaregistr
 fastavro = "1.12.0"
 google-cloud-bigquery = "3.35.1"
 pydantic = "2.11.7"
+
 plotly = "6.3.0"
+numpy = "2.3.2" # trengs av noen deler av plotly 
 
 [tool.poetry.group.dev.dependencies]
 black = "*"
