@@ -1,5 +1,7 @@
 # Changelog
 
+### 0.1.95
+- added numpy = "2.3.2 required by some parts of plotly
 
 ### 0.1.9
 - removed old brreg api
