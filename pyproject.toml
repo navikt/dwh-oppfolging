@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dwh-oppfolging"
-version = "0.1.95"
+version = "0.1.96"
 description = "Oppfolging python package for DWH ETL"
 authors = ["Team Oppfølging"]
 packages = [{include = "dwh_oppfolging"}]
@@ -52,6 +52,7 @@ build-backend = "poetry.core.masonry.api"
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules --ignore=examples --ignore=tests/wip"
+markers = ["local"]
 
 [tool.mypy]
 files = "dwh_oppfolging"

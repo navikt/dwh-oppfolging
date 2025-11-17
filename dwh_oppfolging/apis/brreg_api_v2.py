@@ -454,7 +454,7 @@ class BrregUnitAPI:
             with gzip.open(compressed_file, "rb") as file:
                 batch: list[dict | Any] = []
                 logging.info("iterating over json objects")
-                for record in filter(unit_filter, map(callback, ijson.items(file, "item"))):
+                for record in filter(unit_filter, map(callback, ijson.items(file, "item", use_float=True))):
                     batch.append(record)
                     if len(batch) >= batch_size:
                         yield batch

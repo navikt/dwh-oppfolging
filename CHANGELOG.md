@@ -1,5 +1,9 @@
 # Changelog
 
+### 0.1.96
+- added ssb_api_v1_pydantic that will deprecate ssb_api_v1 and ssb_api_v1_types in future version
+- use_floats=True when streaming units from brreg file, since Decimal isn't supported by json.dumps
+
 ### 0.1.95
 - added numpy = "2.3.2 required by some parts of plotly
 
