@@ -3,6 +3,17 @@
 ### 0.1.96
 - added ssb_api_v1_pydantic that will deprecate ssb_api_v1 and ssb_api_v1_types in future version
 - use_floats=True when streaming units from brreg file, since Decimal isn't supported by json.dumps
+- updated various packages:
+    requests (2.32.4 -> 2.32.5)
+    dbt-oracle (1.9.3 -> 1.9.4)
+    oracledb (3.2.0 -> 3.3.0)
+    google-cloud-secret-manager (2.24.0 -> 2.25.0)
+    confluent-kafka (2.11.0 -> 2.12.2)
+    fastavro (1.12.0 -> 1.12.1)
+    google-cloud-bigquery (3.35.1 -> 3.38.0)
+    pydantic (2.11.7 -> 2.12.4)
+    numpy (2.3.2 -> 2.3.5)
+    plotly (6.3.0 -> 6.4.0)
 
 ### 0.1.95
 - added numpy = "2.3.2 required by some parts of plotly

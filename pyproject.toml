@@ -10,20 +10,20 @@ readme = "README.md"
 [tool.poetry.dependencies]
 python = "3.12.*"       # python 3.12 mangler distutils, som ødelegger installasjon av pendulum 2.1.2
                         # derfor låser vi oss til python 3.11
-requests = "2.32.4"
+requests = "2.32.5"
 pendulum = "3.1.0"      # fjernet airflow/dataverk i dev fordi den bruker en eldgammel versjon av pendulum
 ijson = "3.4.0"
-oracledb = "3.2.0"      # versjonen her begrenses av dbt-oracle, så dbt-oracle må oppgraderes først
-dbt-oracle = "1.9.3"    # denne krever cx_Oracle 8.3, som vi ikke klarer å bygge uten gcc
+oracledb = "3.3.0"      # versjonen her begrenses av dbt-oracle, så dbt-oracle må oppgraderes først
+dbt-oracle = "1.9.4"    # denne krever cx_Oracle 8.3, som vi ikke klarer å bygge uten gcc
                         # 3.11-slim har ikke gcc, men 3.11 har det, men den er +700 MB..
-google-cloud-secret-manager = "2.24.0"
-confluent-kafka = { version = "2.11.0", extras = ["avro", "json", "schemaregistry"]} 
-fastavro = "1.12.0"
-google-cloud-bigquery = "3.35.1"
-pydantic = "2.11.7"
+google-cloud-secret-manager = "2.25.0"
+confluent-kafka = { version = "2.12.2", extras = ["avro", "json", "schemaregistry"]} 
+fastavro = "1.12.1"
+google-cloud-bigquery = "3.38.0"
+pydantic = "2.12.4"
 
-plotly = "6.3.0"
-numpy = "2.3.2" # trengs av noen deler av plotly 
+plotly = "6.4.0"
+numpy = "2.3.5" # trengs av noen deler av plotly 
 
 [tool.poetry.group.dev.dependencies]
 black = "*"
