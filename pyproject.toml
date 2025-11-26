@@ -12,7 +12,7 @@ python = "3.12.*"       # python 3.12 mangler distutils, som ødelegger installa
                         # derfor låser vi oss til python 3.11
 requests = "2.32.5"
 pendulum = "3.1.0"      # fjernet airflow/dataverk i dev fordi den bruker en eldgammel versjon av pendulum
-ijson = "3.4.0"
+ijson = "3.4.0.post0"
 oracledb = "3.3.0"      # versjonen her begrenses av dbt-oracle, så dbt-oracle må oppgraderes først
 dbt-oracle = "1.9.4"    # denne krever cx_Oracle 8.3, som vi ikke klarer å bygge uten gcc
                         # 3.11-slim har ikke gcc, men 3.11 har det, men den er +700 MB..
