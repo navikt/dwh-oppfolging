@@ -20,5 +20,5 @@ def test_plotly_html_figure():
     fig = ff.create_table([["a", "b"], [1, 2]])
     div1 = fig.to_html(full_html=False, include_plotlyjs=False)
     div2 = fig.to_html(full_html=False, include_plotlyjs=False)
-    j2_template = Template(template, autoescape=False)
+    j2_template = Template(template, autoescape=True)
     j2_template.render({"figures": [div1, div2], "plotlyjs": get_plotlyjs()})
