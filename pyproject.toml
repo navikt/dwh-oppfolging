@@ -22,7 +22,7 @@ fastavro = "1.12.1"
 google-cloud-bigquery = "3.38.0"
 pydantic = "2.12.5"
 
-plotly = "6.5.0"
+plotly = "6.5.1"
 numpy = "2.3.5" # trengs av noen deler av plotly 
 
 [tool.poetry.group.dev.dependencies]
