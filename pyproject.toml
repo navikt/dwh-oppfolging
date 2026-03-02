@@ -24,6 +24,7 @@ pydantic = "2.12.5"
 
 plotly = "6.5.1"
 numpy = "2.3.5" # trengs av noen deler av plotly 
+paramiko = "4.0.0"
 
 [tool.poetry.group.dev.dependencies]
 black = "*"
