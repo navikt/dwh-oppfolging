@@ -1,5 +1,18 @@
 # Changelog
 
+### 0.1.97
+ - added paramiko 4.0.0
+ - updated various packages:
+   - pendulum 3.1.0 -> 3.2.0
+   - oracledb 3.3.0 -> 3.4.1
+   - dbt-oracle 1.9.4 -> 1.10.0
+   - google-cloud-secret-manager 2.25.0 -> 2.26.0
+   - confluent-kafka 2.12.2 -> 2.13.0
+   - google-cloud-bigquery 3.38.0 -> 3.40.1
+   - pydantic 2.12.4 -> 2.12.5
+   - plotly 6.4.0 -> 6.5.2
+   
+
 ### 0.1.96
 - added ssb_api_v1_pydantic that will deprecate ssb_api_v1 and ssb_api_v1_types in future version
 - use_floats=True when streaming units from brreg file, since Decimal isn't supported by json.dumps
