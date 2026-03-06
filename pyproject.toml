@@ -11,7 +11,7 @@ readme = "README.md"
 python = "3.12.*"       # python 3.12 mangler distutils, som ødelegger installasjon av pendulum 2.1.2
                         # derfor låser vi oss til python 3.11
 requests = "2.32.5"
-pendulum = "3.1.0"      # fjernet airflow/dataverk i dev fordi den bruker en eldgammel versjon av pendulum
+pendulum = "3.2.0"      # fjernet airflow/dataverk i dev fordi den bruker en eldgammel versjon av pendulum
 ijson = "3.4.0"
 oracledb = "3.4.1"      # versjonen her begrenses av dbt-oracle, så dbt-oracle må oppgraderes først
 dbt-oracle = "1.10.0"    # denne krever cx_Oracle 8.3, som vi ikke klarer å bygge uten gcc
