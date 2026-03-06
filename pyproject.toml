@@ -19,7 +19,7 @@ dbt-oracle = "1.10.0"    # denne krever cx_Oracle 8.3, som vi ikke klarer å byg
 google-cloud-secret-manager = "2.26.0"
 confluent-kafka = { version = "2.13.0", extras = ["avro", "json", "schemaregistry"]} 
 fastavro = "1.12.1"
-google-cloud-bigquery = "3.38.0"
+google-cloud-bigquery = "3.40.1"
 pydantic = "2.12.5"
 
 plotly = "6.5.2"
