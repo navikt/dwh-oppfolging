@@ -23,7 +23,7 @@ google-cloud-bigquery = "3.40.1"
 pydantic = "2.12.5"
 
 plotly = "6.5.2"
-numpy = "2.3.5" # trengs av noen deler av plotly 
+numpy = "2.4.2" # trengs av noen deler av plotly 
 paramiko = "4.0.0"
 
 [tool.poetry.group.dev.dependencies]
