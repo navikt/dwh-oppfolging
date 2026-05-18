@@ -1,5 +1,11 @@
 # Changelog
 
+### 0.1.98
+- updaded various packages, including
+    - ijson 3.4.0 -> 3.5.0
+    - confluent-kafka 2.13.0 -> 2.13.2
+    - numpy 2.3.5 -> 2.4.2
+
 ### 0.1.97
  - added paramiko 4.0.0
  - updated various packages:
