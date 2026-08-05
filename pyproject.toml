@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "dwh-oppfolging"
-version = "0.1.98"
+version = "0.2.0"
 description = "Oppfolging python package for DWH ETL"
 authors = ["Team Oppfølging"]
 packages = [{include = "dwh_oppfolging"}]
