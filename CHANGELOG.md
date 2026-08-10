@@ -1,5 +1,10 @@
 # Changelog
-
+### 0.2.0
+- updated packages:
+  - dbt-oracle 1.10.0 -> 1.11.1
+  - oracledb 3.4.1 -> 4.0.2
+  - fastavro 1.12.1 -> 1.12.2
+  - numpy 2.4.2 -> 2.4.6
 ### 0.1.98
 - updaded various packages, including
     - ijson 3.4.0 -> 3.5.0
