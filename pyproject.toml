@@ -19,7 +19,7 @@ oracledb = "4.0.2"     # note: dbt-oracle no longer has any specific version req
 google-cloud-secret-manager = "2.26.0"
 confluent-kafka = { version = "2.15.0", extras = ["avro", "json", "schemaregistry"]} 
 fastavro = "1.12.2"
-google-cloud-bigquery = "3.40.1"
+google-cloud-bigquery = "3.43.0"
 pydantic = "2.12.5"
 
 plotly = "6.6.0"
