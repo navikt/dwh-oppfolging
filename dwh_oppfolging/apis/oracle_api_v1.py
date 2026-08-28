@@ -8,7 +8,7 @@ from oracledb.connection import Connection # pylint: disable=no-name-in-module
 from oracledb.connection import connect # pylint: disable=no-name-in-module
 from oracledb.cursor import Cursor
 from oracledb.var import Var
-from oracledb import TIMESTAMP
+from oracledb import DB_TYPE_TIMESTAMP, DB_TYPE_TIMESTAMP_TZ
 
 from dwh_oppfolging.apis.secrets_api_v1 import get_oracle_user_credentials
 from dwh_oppfolging.apis.oracle_api_v1_types import (
@@ -37,7 +37,10 @@ def _fix_timestamp_inputtypehandler(cur: Cursor, val, arrsize: int) -> Var | Non
     for the columns which may cause trouble.
     """
     if isinstance(val, datetime):
-        return cur.var(TIMESTAMP, arraysize=arrsize) # pylint: disable=no-member
+        if val.tzinfo is None:
+            return cur.var(DB_TYPE_TIMESTAMP, arraysize=arrsize)
+        else:
+            return cur.var(DB_TYPE_TIMESTAMP_TZ, arraysize=arrsize)
     # No return value implies default type handling
     return None
 
