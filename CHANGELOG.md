@@ -1,4 +1,6 @@
 # Changelog
+### 0.2.1
+- _fix_timestamp_inputtypehandler now forces TIMESTAMP types to mitigate datetime precision loss when inserting data with oracledb
 ### 0.2.0
 - updated packages:
   - dbt-oracle 1.10.0 -> 1.11.1
