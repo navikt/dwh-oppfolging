@@ -36,7 +36,7 @@ def _fix_timestamp_inputtypehandler(cur: Cursor, val, arrsize: int) -> Var | Non
     set inputsizes correctly before the first execute()/executemany() call
     for the columns which may cause trouble.
     """
-    if isinstance(val, datetime) and val.microsecond > 0:
+    if isinstance(val, datetime):
         return cur.var(TIMESTAMP, arraysize=arrsize) # pylint: disable=no-member
     # No return value implies default type handling
     return None
