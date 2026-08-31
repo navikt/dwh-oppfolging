@@ -12,7 +12,7 @@ python = "3.12.*"       # python 3.12 mangler distutils, som ødelegger installa
                         # derfor låser vi oss til python 3.11
 requests = "2.34.2"
 pendulum = "3.2.0"      # fjernet airflow/dataverk i dev fordi den bruker en eldgammel versjon av pendulum
-ijson = "3.5.0"
+ijson = "3.5.1"
 dbt-oracle = "1.11.1"
 oracledb = "4.0.2"     # note: dbt-oracle no longer has any specific version requirements here, so we can use the latest
 
