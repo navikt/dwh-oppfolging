@@ -22,7 +22,7 @@ fastavro = "1.12.2"
 google-cloud-bigquery = "3.43.0"
 pydantic = "2.12.5"
 
-plotly = "6.6.0"
+plotly = "6.9.0"
 numpy = "2.4.6" # trengs av noen deler av plotly 
 paramiko = "4.0.0"
 
