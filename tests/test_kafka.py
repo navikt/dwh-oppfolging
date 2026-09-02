@@ -1,12 +1,13 @@
 # export TESTCONTAINERS_RYUK_DISABLED=true
+# export DOCKER_HOST="unix://$(podman machine inspect --format '{{.ConnectionInfo.PodmanSocket.Path}}')"
 import inspect
 import requests
 
-from testcontainers.kafka import KafkaContainer
+from testcontainers.community.kafka import KafkaContainer
 from testcontainers.core.network import Network
-from testcontainers.generic import ServerContainer
+from testcontainers.community.generic.server import ServerContainer
 
-from confluent_kafka.admin import NewTopic
+from confluent_kafka.admin import NewTopic # type: ignore (noqa pylance err)
 from confluent_kafka import Producer as ProducerClient
 from confluent_kafka.schema_registry import Schema
 

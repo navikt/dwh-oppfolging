@@ -1,7 +1,7 @@
 "datatypes used by kafka api"
 
 from typing import Final, Callable, Iterator, Any, Literal, get_args
-from enum import Enum
+from enum import IntEnum
 import logging
 import struct
 from io import BytesIO
@@ -11,10 +11,10 @@ from confluent_kafka import (
     Consumer as ConsumerClient, TopicPartition, Message,
     TIMESTAMP_NOT_AVAILABLE, TIMESTAMP_CREATE_TIME, TIMESTAMP_LOG_APPEND_TIME,
     OFFSET_BEGINNING, OFFSET_END, OFFSET_STORED, OFFSET_INVALID,
+    KafkaError, KafkaException
 )
-from confluent_kafka.error import KafkaError
 from confluent_kafka.admin import (
-    AdminClient, ClusterMetadata, TopicMetadata, PartitionMetadata
+    AdminClient, ClusterMetadata, TopicMetadata, PartitionMetadata # type: ignore (noqa pylance err)
 )
 from confluent_kafka.schema_registry import SchemaRegistryClient, SchemaRegistryError
 from dwh_oppfolging.transforms.functions import (
@@ -22,7 +22,7 @@ from dwh_oppfolging.transforms.functions import (
     string_to_sha256_hash, bytes_to_sha256_hash, json_to_string
 )
 
-class _LogicalOffset(Enum):
+class _LogicalOffset(IntEnum):
     OFFSET_BEGINNING = OFFSET_BEGINNING
     OFFSET_END = OFFSET_END
     OFFSET_STORED = OFFSET_STORED
@@ -96,7 +96,7 @@ class KafkaConnection:
             "auto.offset.reset": "error", # <- Action to take when there is no initial offset in offset store 
             "enable.auto.commit": False,  # ^ or the desired offset is out of range: beginning or end or error
             "enable.auto.offset.store": False,
-            "api.version.request": True,
+            #"api.version.request": True,  # Deprecated, removed this property
             'enable.partition.eof': True
         }
 
@@ -166,11 +166,11 @@ class KafkaConnection:
         except KeyError:
             raise KeyError(f"Topic {topic} not found.") from None
         if topic_metadata.error is not None:
-            raise topic_metadata.error # type: ignore
+            raise KafkaException(topic_metadata.error)
 
         for partition_metadata in topic_metadata.partitions.values():
             if partition_metadata.error is not None:
-                raise partition_metadata.error
+                raise KafkaException(partition_metadata.error)
         return topic_metadata.partitions
 
     def _build_assignable_list_of_topic_partitions(self,
@@ -210,8 +210,13 @@ class KafkaConnection:
         timestamp_value = timestamp_data[1] if timestamp_type != TIMESTAMP_NOT_AVAILABLE else None
         timestamp_desc = _TIMESTAMP_DESCRIPTORS_LKP.get(timestamp_type)
 
-        headers_raw: list[tuple[str, bytes]] | None = message.headers() # cast bytes to hex string
-        headers = ",".join(":".join((h[0], h[1].hex())) for h in headers_raw) if headers_raw else None
+        headers_raw = message.headers() # HeadersType|None
+        # headers raw, either [(str, str|bytes|None)] or {str:str|bytes|None}
+        headers: str|None = ",".join(
+            ":".join(
+                (k, v.hex() if isinstance(v, bytes) else str(v)) # str: hex|'None'|str
+            ) for k,v in dict(headers_raw).items()
+        ) if headers_raw else None
         # latency: float | None = message.latency() # (producer only)
 
         key: str | bytes | None = message.key()
@@ -318,7 +323,7 @@ class KafkaConnection:
         topic_partitions = [TopicPartition(topic, partition, timestamp) for partition in partitions]
         topic_partitions = consumer_client.offsets_for_times(topic_partitions)
         consumer_client.close()
-        return [(tp.partition, tp.offset if tp.offset > 0 else OFFSET_END) for tp in topic_partitions]
+        return [(tp.partition, tp.offset if tp.offset > 0 else _LogicalOffset.OFFSET_END) for tp in topic_partitions]
 
     def read_batched_messages_from_topic(
         self, topic: Topic, *,
@@ -396,11 +401,11 @@ class KafkaConnection:
                     offset_lo, offset_hi = result
                     if offset < offset_lo or offset > offset_hi:
                         if clip_custom_start_offsets:
-                            offset = OFFSET_END if offset > offset_hi else OFFSET_BEGINNING
+                            offset = _LogicalOffset.OFFSET_END if offset > offset_hi else _LogicalOffset.OFFSET_BEGINNING
                             custom_start_partition_offsets[idx] = (partition, offset)
                             logging.info(f"clipped custom start offset for partition {partition}")
                         else:
-                            raise Exception(f"custom start offset {offset} on partition {partition} out-of-bounds")
+                            raise KafkaException(f"custom start offset {offset} on partition {partition} out-of-bounds")
 
         # try to cache all avro schemas before message loop
         if "confluent-avro" in (expected_key_type, expected_value_type):
@@ -413,7 +418,7 @@ class KafkaConnection:
         value_bytes_hasher = self._byteshasher_map.get(expected_value_type, bytes_to_sha256_hash)
 
         # build topic-partition-offset assign list
-        default_offset = OFFSET_BEGINNING # OFFSET_END
+        default_offset = _LogicalOffset.OFFSET_BEGINNING # OFFSET_END
         partition_lkp = self._get_partition_lkp(topic)
         topic_partitions = self._build_assignable_list_of_topic_partitions(topic, partition_lkp, default_offset, custom_start_partition_offsets)
         del default_offset
@@ -439,14 +444,14 @@ class KafkaConnection:
             non_empty_counter += 1
 
             try:
-                err: KafkaError | None = message.error() #  None: proper message, KafkaError: event or error 
+                err = message.error() #  None: proper message, KafkaError: event or error 
 
                 # if: event, error
                 if err is not None:
 
                     # see librdkafka introduction.md: consumer should be destroyed when error is fatal
                     if err.fatal():
-                        raise err
+                        raise KafkaException(err)
 
                     # handle non-fatal event/error
                     match err.code():
@@ -479,11 +484,11 @@ class KafkaConnection:
                             assert err_topic is not None and err_partition is not None and err_offset is not None
                             logging.error(f"start offset {err_offset} on partition {err_partition} can not be fetched")
                             logging.error("consider using the closest one (in time) from `get_closest_offsets` instead")
-                            raise err
+                            raise KafkaException(err)
 
                         # unhandled errors
                         case _:
-                            raise err
+                            raise KafkaException(err)
 
                 # case: proper message
                 else:
