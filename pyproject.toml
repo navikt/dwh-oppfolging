@@ -20,7 +20,7 @@ google-cloud-secret-manager = "2.26.0"
 confluent-kafka = { version = "2.15.0", extras = ["avro", "json", "schemaregistry"]} 
 fastavro = "1.12.2"
 google-cloud-bigquery = "3.43.0"
-pydantic = "2.12.5"
+pydantic = "2.13.4"
 
 plotly = "6.6.0"
 numpy = "2.4.6" # trengs av noen deler av plotly 
