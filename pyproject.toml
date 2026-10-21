@@ -1,41 +1,49 @@
-[tool.poetry]
+[project]
 name = "dwh-oppfolging"
-version = "0.2.1"
+version = "0.2.2"
 description = "Oppfolging python package for DWH ETL"
-authors = ["Team Oppfølging"]
-packages = [{include = "dwh_oppfolging"}]
+authors = [{ name = "Team Oppfølging" }]
+requires-python = "==3.12.*"
 readme = "README.md"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "requests==2.34.2",
+    "pendulum==3.2.0",
+    "ijson==3.5.0",
+    "dbt-oracle==1.11.1",
+    "oracledb==4.0.2",
+    "google-cloud-secret-manager==2.26.0",
+    "confluent-kafka[avro, json, schemaregistry]==2.15.0",
+    "fastavro==1.12.2",
+    "google-cloud-bigquery==3.43.0",
+    "pydantic==2.13.4",
+    "plotly==6.6.0",
+    "numpy==2.4.6",
+    "paramiko==4.0.0",
+]
 
+[dependency-groups]
+dev = [
+    "black",
+    "mypy",
+    "pylint",
+    "pytest",
+    "testcontainers[oracledb, kafka]",
+]
 
-[tool.poetry.dependencies]
-python = "3.12.*"       # python 3.12 mangler distutils, som ødelegger installasjon av pendulum 2.1.2
-                        # derfor låser vi oss til python 3.11
-requests = "2.34.2"
-pendulum = "3.2.0"      # fjernet airflow/dataverk i dev fordi den bruker en eldgammel versjon av pendulum
-ijson = "3.5.0"
-dbt-oracle = "1.11.1"
-oracledb = "4.0.2"     # note: dbt-oracle no longer has any specific version requirements here, so we can use the latest
+[tool.uv]
+default-groups = "all"
 
-google-cloud-secret-manager = "2.26.0"
-confluent-kafka = { version = "2.15.0", extras = ["avro", "json", "schemaregistry"]} 
-fastavro = "1.12.2"
-google-cloud-bigquery = "3.43.0"
-pydantic = "2.13.4"
-
-plotly = "6.6.0"
-numpy = "2.4.6" # trengs av noen deler av plotly 
-paramiko = "4.0.0"
-
-[tool.poetry.group.dev.dependencies]
-black = "*"
-mypy = "*"
-pylint = "*"
-pytest = "*"
-testcontainers = {version = "*", extras = ["oracledb", "kafka"] }
+[tool.uv.build-backend]
+module-name = ["dwh_oppfolging"]
+module-root = ""
 
 [build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
+requires = ["uv_build>=0.13.4,<0.14.0"]
+build-backend = "uv_build"
 
 # [tool.sqlfluff.core]
 # dialect = "oracle"
