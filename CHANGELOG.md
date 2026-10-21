@@ -1,4 +1,6 @@
 # Changelog
+### 0.2.2
+  - migrated from poetry to uv due to certificate issue
 ### 0.2.1
 - _fix_timestamp_inputtypehandler now forces TIMESTAMP types to mitigate datetime precision loss when inserting data with oracledb
 - confluent-kafka 2.14.0 -> 2.15.0
