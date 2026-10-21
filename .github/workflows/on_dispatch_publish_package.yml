@@ -18,6 +18,7 @@ jobs:
         with:
           enable-cache: false
           python-version: 3.12
+          version: ">=0.13.4"
       - run: uv build
       - name: Publish package distributions to PyPI
         uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086 #release/v1.14.3
