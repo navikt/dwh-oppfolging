@@ -1,4 +1,6 @@
 # Changelog
+### 0.2.3
+  - upgraded certifi again, explicit version requirement
 ### 0.2.2
   - migrated from poetry to uv due to certificate issue
 ### 0.2.1
