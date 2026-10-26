@@ -22,7 +22,7 @@ dependencies = [
     "pydantic==2.13.4",
     "plotly==6.6.0",
     "numpy==2.4.6",
-    "paramiko==4.0.0",
+    "paramiko==5.1.0",
     "certifi>=2026.10.23",
 ]
 
