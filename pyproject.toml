@@ -16,7 +16,7 @@ dependencies = [
     "dbt-oracle==1.11.1",
     "oracledb==4.0.2",
     "google-cloud-secret-manager==2.26.0",
-    "confluent-kafka[avro, json, schemaregistry]==2.15.0",
+    "confluent-kafka[avro, json, schemaregistry]==2.16.0",
     "fastavro==1.12.2",
     "google-cloud-bigquery==3.43.0",
     "pydantic==2.13.4",
