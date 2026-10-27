@@ -32,7 +32,9 @@ dev = [
     "mypy",
     "pylint",
     "pytest",
-    "testcontainers[oracledb, kafka]",
+    "pytest-order",
+    "hypothesis",
+    "testcontainers[oracle-free, kafka]",
 ]
 
 [tool.uv]
