@@ -152,6 +152,7 @@ class Classification(SSBModel, frozen=True):
     statistical_units: list[str]  # Statistical units assigned to classification (type guessed, not documented in API)
     last_modified: str # Last time classification has been modified
     versions: list[VersionHeader] # Array of classification versions
+    classification_family_id: int # Classification family is a grouping of classifications
     links: _EXCLUDE_LINKS_T # Links to operations on classification (...)
 
 
