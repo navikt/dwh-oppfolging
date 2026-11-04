@@ -1,5 +1,6 @@
 # Changelog
 ### 0.2.4
+  - bump pendulum, google-cloud-secret-manager, pydantic and transitive pyasn1
   - excluded dbt experimental parser until issue [15670](https://github.com/dbt-labs/dbt/issues/15670) is fixed
   - removed some dev dependencies which caused build issues
 ### 0.2.3
