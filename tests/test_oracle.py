@@ -1,4 +1,4 @@
-from testcontainers.oracle import OracleDbContainer
+from testcontainers.community.oracle import OracleDbContainer
 from dwh_oppfolging.apis.oracle_api_v1 import create_oracle_connection
 
 import oracledb
@@ -21,7 +21,7 @@ def test_oracle():
             
         ) as con:
             with con.cursor() as cur:
-                assert cur.execute("select 1 from dual").fetchall() == [(1,)]
+                assert cur.execute("select 1 from dual").fetchall() == [(1,)] # type: ignore
 
 if __name__ == "__main__":
     test_oracle()
