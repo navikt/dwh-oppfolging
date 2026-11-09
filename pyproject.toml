@@ -19,7 +19,7 @@ dependencies = [
     "confluent-kafka[avro, json, schemaregistry]==2.16.0",
     "fastavro==1.12.2",
     "google-cloud-bigquery==3.46.2",
-    "pydantic==2.14.1",
+    "pydantic==2.14.2",
     "plotly==6.6.0",
     "numpy==2.4.6",
     "paramiko==5.1.0",
