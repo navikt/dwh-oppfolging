@@ -17,7 +17,7 @@ def create_kafka_connection(teamname: str):
     authenticates and connects to kafka, enabling reading from topics
     """
     creds = get_kafka_user_credentials()
-    con = KafkaConnection(creds)
+    con = KafkaConnection(creds.get_secret_value())
     yield con
     #del con
     #del secrets

@@ -61,11 +61,11 @@ def create_oracle_connection(schema: str, as_proxy: bool = False) -> Connection:
     creds = get_oracle_user_credentials(schema)
 
     con = connect(
-        user=creds["user"] if not as_proxy else creds["user"] + f"[{schema}]",
-        password=creds["pwd"],
-        host=creds["host"],
-        port=creds["port"],
-        service_name=creds["service"]
+        user=creds.get_secret_value()["user"] if not as_proxy else creds.get_secret_value()["user"] + f"[{schema}]",
+        password=creds.get_secret_value()["pwd"],
+        host=creds.get_secret_value()["host"],
+        port=creds.get_secret_value()["port"],
+        service_name=creds.get_secret_value()["service"]
     )
     con.inputtypehandler = _fix_timestamp_inputtypehandler
     return con

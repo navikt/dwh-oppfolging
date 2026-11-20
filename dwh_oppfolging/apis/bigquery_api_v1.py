@@ -12,9 +12,9 @@ from dwh_oppfolging.apis.secrets_api_v1 import get_bigquery_user_credentials
 @contextmanager
 def create_google_bigquery_connection(teamname: str):
     """yields bigquery connection Client, use in a with statement"""
-    # first we need to get the credentials to the service account which can read
-    info = get_bigquery_user_credentials()
-    credentials = service_account.Credentials.from_service_account_info(info)
+    credentials = service_account.Credentials.from_service_account_info(
+        get_bigquery_user_credentials.get_secret_value()
+    )
     yield Client(credentials=credentials)
 
 

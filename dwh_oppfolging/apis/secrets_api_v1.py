@@ -1,29 +1,40 @@
 "secrets api, assumes GOOGLE_APPLICATION_CREDENTIALS is set to a service account key file path"
 import os
 import json
-from typing import Any
-from google.cloud import secretmanager as _secretmanager
+from google.cloud.secretmanager import SecretManagerServiceClient, AccessSecretVersionRequest
+from pydantic import SecretStr, Secret
 
 
-def _get_google_cloud_secret(secret_path: str) -> dict[str, Any]:
-    client = _secretmanager.SecretManagerServiceClient()
-    resource_name = f"{secret_path}/versions/latest"
-    secret = client.access_secret_version(name=resource_name)
-    data = secret.payload.data.decode("utf-8")
-    secret = json.loads(data)
-    assert isinstance(secret, dict), "secrets should be formatted as json dicts"
-    return secret
+#def make_gsm_secret_path(secret_name: str, version: str = "latest", project_id: str|None = None) -> str:
+#    project_id = project_id or os.getenv("GCP_TEAM_PROJECT_ID")
+#    assert project_id, "Missing Google Cloud Project ID"
+#    return "/".join(("projects", project_id, "secrets", secret_name, "versions", version))
 
 
-def get_knada_gke_secret():
+def read_utf8_secret(path: str):
+    """Reads and returns a utf-8 encoded secret from Google Cloud SecretManager
+
+    Args:
+        path: a fully qualified secret path, i.e. "projects/*/secrets/*/versions/latest"
+
+    Returns:
+        SecretStr: the utf-8 decoded secret
     """
-    Gets the latest version of secret at environment variable KNADA_TEAM_SECRET.
-    It must be formatted as a json dict.
+    client = SecretManagerServiceClient()
+    request = AccessSecretVersionRequest(name=path)
+    response = client.access_secret_version(request, timeout=10)
+    try:
+        return SecretStr(response.payload.data.decode("utf-8"))
+    except UnicodeError:
+        raise Exception("Unable to decode GSM secret payload") from None
 
-    returns:
-        - secret dict
-    """
-    return _get_google_cloud_secret(os.environ["KNADA_TEAM_SECRET"]) # set by KNADA
+
+def read_json_utf8_secret(path: str) -> Secret[dict]:
+    secret = read_utf8_secret(path)
+    try:
+        return Secret(json.loads(secret.get_secret_value()))
+    except json.JSONDecodeError:
+        raise ValueError("Unable to decode GSM secret as json") from None
 
 
 def get_project_secret(project_id: str, secret_name: str):
@@ -39,7 +50,7 @@ def get_project_secret(project_id: str, secret_name: str):
         - secret dict
     """
     secret_path = f"projects/{project_id}/secrets/{secret_name}"
-    return _get_google_cloud_secret(secret_path)
+    return read_json_utf8_secret(secret_path)
 
 
 def get_kafka_user_credentials(user: str = ""):
@@ -68,8 +79,17 @@ def get_oracle_user_credentials(schema: str):
         - user credentials dict
     """
     secret = get_project_secret(os.environ["GCP_TEAM_PROJECT_ID"], os.environ["GCP_ORACLE_SECRET_NAME"]) # set by user
-    creds = secret["dsn"] # host, port, service, database
-    creds |= secret["schemas"][schema] # user, pwd
+    creds = Secret({
+        "user": secret.get_secret_value()["schemas"][schema]["user"],
+        "pwd": secret.get_secret_value()["schemas"][schema]["pwd"],
+        "host": secret.get_secret_value()["dsn"]["host"],
+        "port": secret.get_secret_value()["dsn"]["port"],
+        "service": secret.get_secret_value()["dsn"]["service"],
+        "database": secret.get_secret_value()["dsn"]["database"],
+    })
+   
+    #creds = secret.get_secret_value()["dsn"] # host, port, service, database
+    #creds |= secret["schemas"][schema] # user, pwd
     return creds
 
 
@@ -81,3 +101,6 @@ def get_bigquery_user_credentials(user: str = ""):
     if user:
         raise NotImplementedError
     return get_project_secret(os.environ["GCP_TEAM_PROJECT_ID"], os.environ["GCP_BIGQUERY_SECRET_NAME"]) # set by user
+
+
+
