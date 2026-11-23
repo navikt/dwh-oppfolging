@@ -13,7 +13,7 @@ from dwh_oppfolging.apis.secrets_api_v1 import get_bigquery_user_credentials
 def create_google_bigquery_connection(teamname: str):
     """yields bigquery connection Client, use in a with statement"""
     credentials = service_account.Credentials.from_service_account_info(
-        get_bigquery_user_credentials.get_secret_value()
+        get_bigquery_user_credentials().get_secret_value()
     )
     yield Client(credentials=credentials)
 

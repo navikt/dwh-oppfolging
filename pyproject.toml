@@ -47,19 +47,8 @@ module-root = ""
 requires = ["uv_build>=0.13.4,<0.14.0"]
 build-backend = "uv_build"
 
-# [tool.sqlfluff.core]
-# dialect = "oracle"
-
-# [tool.sqlfluff.indentation]
-# indented_joins = "True"
-# indented_ctes = "True"
-
-# [tool.sqlfluff.rules]
-# comma_style = "leading"
-# tab_space_size = 4
-# capitalisation_policy = "lower"
-# operator_new_lines = "after"
-# aliasing = "explicit"
+[tool.pyright]
+typeCheckingMode = "standard"
 
 [tool.pytest.ini_options]
 addopts = "--doctest-modules --ignore=examples --ignore=tests/wip"
@@ -67,8 +56,6 @@ markers = ["local"]
 
 [tool.mypy]
 files = "dwh_oppfolging"
-
-[[tool.mypy.overrides]]
 ignore_missing_imports = true
 
 [tool.pylint.messages_control]

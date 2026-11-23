@@ -11,7 +11,7 @@ from pydantic import SecretStr, Secret
 #    return "/".join(("projects", project_id, "secrets", secret_name, "versions", version))
 
 
-def read_utf8_secret(path: str):
+def read_utf8_secret(path: str) -> SecretStr:
     """Reads and returns a utf-8 encoded secret from Google Cloud SecretManager
 
     Args:
@@ -37,7 +37,7 @@ def read_json_utf8_secret(path: str) -> Secret[dict]:
         raise ValueError("Unable to decode GSM secret as json") from None
 
 
-def get_project_secret(project_id: str, secret_name: str):
+def get_project_secret(project_id: str, secret_name: str) -> Secret[dict]:
     """
     Gets the latest version of project secret.
     It must be formatted as a json dict.
@@ -49,11 +49,11 @@ def get_project_secret(project_id: str, secret_name: str):
     returns:
         - secret dict
     """
-    secret_path = f"projects/{project_id}/secrets/{secret_name}"
+    secret_path = f"projects/{project_id}/secrets/{secret_name}/versions/latest"
     return read_json_utf8_secret(secret_path)
 
 
-def get_kafka_user_credentials(user: str = ""):
+def get_kafka_user_credentials(user: str = "") -> Secret[dict]:
     """
     Gets the latest version of the kafka-credentials secret.
 
@@ -67,7 +67,7 @@ def get_kafka_user_credentials(user: str = ""):
     return get_project_secret(os.environ["GCP_TEAM_PROJECT_ID"], os.environ["GCP_KAFKA_SECRET_NAME"]) # set by user
 
 
-def get_oracle_user_credentials(schema: str):
+def get_oracle_user_credentials(schema: str) -> Secret[dict]:
     """
     Gets the latest version of the oracle-credentials secret for
     the user with full schema access to the supplied schema.
@@ -93,7 +93,7 @@ def get_oracle_user_credentials(schema: str):
     return creds
 
 
-def get_bigquery_user_credentials(user: str = ""):
+def get_bigquery_user_credentials(user: str = "") -> Secret[dict]:
     """
     Gets the latest version of the bigquery-credentials secret.
     This is actually a service account which we need to impersonate?
