@@ -27,6 +27,7 @@ dependencies = [
     "flyte==2.14.1",
     "flyteplugins-dbt==2.14.0",
     "nav-union==0.2.1",
+    "unionai-reuse==0.2.2",
 ]
 
 [dependency-groups]

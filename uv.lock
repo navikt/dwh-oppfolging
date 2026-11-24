@@ -574,6 +574,7 @@ dependencies = [
     { name = "plotly" },
     { name = "pydantic" },
     { name = "requests" },
+    { name = "unionai-reuse" },
 ]
 
 [package.dev-dependencies]
@@ -604,6 +605,7 @@ requires-dist = [
     { name = "plotly", specifier = "==6.6.0" },
     { name = "pydantic", specifier = "==2.14.1" },
     { name = "requests", specifier = "==2.34.2" },
+    { name = "unionai-reuse", specifier = "==0.2.2" },
 ]
 
 [package.metadata.requires-dev]
@@ -2210,6 +2212,19 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/7a/29/6a1391d31cd00ff9e927215a224a880e1e84e826b64ba80a499e51c074d8/tzdata-2026.6.tar.gz", hash = "sha256:85d2cd9c09f81f0bb29db27759fc83af4f1e620efb814f8c5bf8b4cc4feece6d", size = 201017, upload-time = "2026-10-28T09:57:09.137Z" }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/0a/66/9a06c2227fedfd4919f0eaaa8b94377d9730882a7e4f95823c9a331ab5e1/tzdata-2026.6-py2.py3-none-any.whl", hash = "sha256:0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec", size = 348210, upload-time = "2026-10-28T09:57:07.276Z" },
+]
+
+[[package]]
+name = "unionai-reuse"
+version = "0.2.2"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "flyte" },
+]
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/59/b7/7e144cc51623f6be7d7731f3f203449751c15b59d846f9648c2387553706/unionai_reuse-0.2.2-cp310-abi3-macosx_11_0_arm64.whl", hash = "sha256:9409d4b69322ee3d74ba61db0fbb94de2beeaba3067bd88df0a90cd0d5a11ebc", size = 1813491, upload-time = "2026-11-16T01:47:21.118Z" },
+    { url = "https://files.pythonhosted.org/packages/0a/87/bb0cee108a183453f1acff62e885e741124c47cabd6fa3c88540f3575a64/unionai_reuse-0.2.2-cp310-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:f30a2a3ca836d5197d27ce6b2a243f433b9e3b53d6137e16f9311fbfa5a402c2", size = 2080918, upload-time = "2026-11-16T01:47:23.078Z" },
+    { url = "https://files.pythonhosted.org/packages/a7/7d/222e9ec6c50e3cf8f87e7bed29fe8f5555e3bacd0fbcb1a98b2721c72f24/unionai_reuse-0.2.2-cp310-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:e6e6b2b9a7deb94280fe1497d5d0d932b8d43e9948157822c8299cb17e8b765c", size = 2109251, upload-time = "2026-11-16T01:47:24.587Z" },
 ]
 
 [[package]]
