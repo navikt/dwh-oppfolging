@@ -24,6 +24,9 @@ dependencies = [
     "numpy==2.4.6",
     "paramiko==5.1.0",
     "certifi>=2026.10.23",
+    "flyte==2.14.1",
+    "flyteplugins-dbt==2.14.0",
+    "nav-union==0.2.1",
 ]
 
 [dependency-groups]
