@@ -1,6 +1,6 @@
 [project]
 name = "dwh-oppfolging"
-version = "1.0.0a1"
+version = "1.0.0a2"
 description = "Oppfolging python package for DWH ETL"
 authors = [{ name = "Team Oppfølging" }]
 requires-python = "==3.12.*"

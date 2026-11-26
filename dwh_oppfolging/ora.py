@@ -4,8 +4,8 @@ from datetime import datetime
 from collections.abc import AsyncIterable, AsyncIterator, Iterable
 from itertools import batched
 from oracledb import (
-    connect_async, AsyncConnection, is_simple_sql_name, AsyncCursor,
-    DB_TYPE_TIMESTAMP, DB_TYPE_TIMESTAMP_TZ
+    connect_async, AsyncConnection, is_simple_sql_name, is_qualified_sql_name,
+    AsyncCursor, DB_TYPE_TIMESTAMP, DB_TYPE_TIMESTAMP_TZ
 )
 from dwh_oppfolging.secret import get_json_secret
 
@@ -57,9 +57,11 @@ async def _get_insert_spec(cur: AsyncCursor, row: dict[str, Any], table: str) ->
     """Returns the insert statement and input sizes from target table column types.
     Names are validated to prevent SQL injection."""
     cols = [k.lower() for k in row]
-    for name in (table, *cols):
+    if not is_qualified_sql_name(table):
+        raise ValueError(f"Invalid table name: {table}")
+    for name in cols:
         if not is_simple_sql_name(name):
-            raise ValueError(f"Invalid sql name: {name}")
+            raise ValueError(f"Invalid column name: {name}")
     await cur.execute(f"select * from {table} where 1 = 0")
     assert cur.description
     coltypes = {d.name.lower(): d.type_code for d in cur.description}
