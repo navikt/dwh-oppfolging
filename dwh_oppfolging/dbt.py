@@ -36,7 +36,7 @@ async def create_dbt_oracle_context(secret_id: str, schema: str) -> AsyncGenerat
 		"DBT_ENV_SECRET_USER": user["user"] + f"[{schema}]",
 		"DBT_ENV_SECRET_PASS": user["pwd"],
 		"DBT_ENV_SECRET_HOST": dsn["host"],
-		"DBT_ENV_SECRET_PORT": str(dsn["port"]),
+		"DBT_ENV_PORT": str(dsn["port"]),
 		"DBT_ENV_SECRET_SERVICE": dsn["service"],
 		"DBT_ENV_SECRET_DATABASE": dsn["database"],
 		"DBT_ENV_SECRET_SCHEMA": schema,
